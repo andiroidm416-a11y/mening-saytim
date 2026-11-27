@@ -1,0 +1,2181 @@
+package com.example.myapplication1
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.util.Patterns
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import kotlinx.coroutines.delay
+import org.json.JSONArray
+import org.json.JSONObject
+import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+// ============================================================
+// YOUTUBE HAVOLALARI — shu yerga havolalarni qo'ying.
+// Kalit = dars id'si, qiymat = YouTube havolasi.
+// Bo'sh ("") qolsa, dars sahifasida "Video tez orada qo'shiladi" yoziladi.
+// ============================================================
+val VIDEO_LINKS: Map<String, String> = mapOf(
+    // ---- Matematika ----
+    "mat1" to "https://www.youtube.com/playlist?list=PLAPu17QuLNg7s5d5LFaCvun-mREoMbc5M",   // Natural va butun sonlar
+    "mat2" to "https://www.youtube.com/watch?v=f1VX4yunKxg",   // Kasrlar va foizlar
+    "mat3" to "https://www.youtube.com/watch?v=coHptHGmEc0",   // Chiziqli tenglamalar
+    "mat4" to "https://www.youtube.com/watch?v=9TWkNnXc8dQ",   // Kvadrat tenglamalar
+    "mat5" to "https://www.youtube.com/watch?v=MgvkukpKx5Y",   // Tengsizliklar
+    "mat6" to "https://www.youtube.com/watch?v=oGwgaVxUxyQ",   // Funksiya va grafiklar
+    "mat7" to "https://www.youtube.com/playlist?list=PL29TYZ7JZEHN-dZMQj6o8W4sg5XhcMB7-",   // Arifmetik va geometrik progressiya
+    "mat8" to "https://www.youtube.com/watch?v=M9Lvb6RYAZM",   // Daraja va logarifm
+    "mat9" to "https://www.youtube.com/watch?v=qq1tN1CxizI",   // Planimetriya (uchburchak, aylana)
+    "mat10" to "https://www.youtube.com/playlist?list=PL29TYZ7JZEHNcQtMWi53JwWkahxIntpa2",   // Trigonometriya asoslari
+    "mat11" to "https://www.youtube.com/watch?v=PsvnEpdcC5Q",   // Ehtimollik va statistika
+    // ---- Ona tili ----
+    "ona1" to "https://www.youtube.com/watch?v=WcSG47-89fQ",   // Fonetika va grafika
+    "ona2" to "https://www.youtube.com/watch?v=K0YtjnV-tyQ",   // Leksikologiya (ma'no turlari)
+    "ona3" to "https://www.youtube.com/watch?v=DtSsJn7o9y4",   // So'z yasalishi
+    "ona4" to "https://www.youtube.com/watch?v=fJoxhk-xSzc",   // Ot
+    "ona5" to "https://www.youtube.com/watch?v=a7UGKHHWNGA",   // Sifat va son
+    "ona6" to "https://www.youtube.com/watch?v=roeky4R2oHo",   // Olmosh
+    "ona7" to "https://www.youtube.com/watch?v=blYUMikbJls",   // Fe'l
+    "ona8" to "https://www.youtube.com/watch?v=70idl524bBw",   // Ravish va yordamchi so'zlar
+    "ona9" to "https://www.youtube.com/watch?v=U1nyjV4Uivk",   // Gap bo'laklari
+    "ona10" to "https://www.youtube.com/watch?v=BbbYFDvuIsk",   // Qo'shma gap
+    "ona11" to "https://www.youtube.com/watch?v=wewVhaCT-T8",   // Imlo qoidalari
+    "ona12" to "https://www.youtube.com/watch?v=MHpzj1wqG2w",   // Tinish belgilari
+    "ona13" to "https://www.youtube.com/watch?v=o-yzlQO1dy8",   // Nutq uslublari
+    // ---- Tarix ----
+    "tar1" to "https://www.youtube.com/watch?v=rMbcW8GYORo",   // Qadimgi Markaziy Osiyo
+    "tar2" to "https://www.youtube.com/watch?v=uy3uzAXQkdU",   // Ilk o'rta asrlar va arab xalifaligi
+    "tar3" to "https://www.youtube.com/watch?v=MLkC42oIFrA",   // Amir Temur va temuriylar davlati
+    "tar4" to "https://www.youtube.com/watch?v=pbH02x_N298",   // Buxoro, Xiva va Qo'qon xonliklari
+    "tar5" to "https://www.youtube.com/watch?v=odQl-5zdXaE",   // Rossiya imperiyasi istilosi
+    "tar6" to "https://www.youtube.com/watch?v=CFfGa62cKi4",   // Jadidchilik harakati
+    "tar7" to "https://www.youtube.com/watch?v=X3ZPl4GBmoA",   // Sovet davri
+    "tar8" to "https://www.youtube.com/watch?v=YwB_sYsMoxg",   // O'zbekiston mustaqilligi
+    "tar9" to "https://www.youtube.com/watch?v=1zttMxn-dWw",   // Jahon tarixidan asosiy davrlar
+    // ---- SAT ----
+    "sat1" to "https://www.youtube.com/watch?v=dFQaoOGYhTk",   // Words in Context
+    "sat2" to "https://www.youtube.com/watch?v=NIJTgyfvudc",   // Central Ideas and Details
+    "sat3" to "https://www.youtube.com/watch?v=-v0dUN21keI",   // Text Structure and Purpose
+    "sat4" to "https://www.youtube.com/watch?v=yfn_VRLG5rg",   // Cross-Text Connections
+    "sat5" to "https://www.youtube.com/watch?v=EZsy-CdsIR4",   // Command of Evidence
+    "sat6" to "https://www.youtube.com/watch?v=ANkK_ecpZZY",   // Inferences
+    "sat7" to "https://www.youtube.com/playlist?list=PL75qpqDuVbG7ViYeJBjNoAf7TBbVEus1l",   // Standard English Conventions
+    "sat8" to "https://www.youtube.com/watch?v=xVx001K5B1w",   // Transitions
+    "sat9" to "https://www.youtube.com/watch?v=tyJtf8n12rE",   // Rhetorical Synthesis
+    "sat10" to "https://www.youtube.com/watch?v=cHUdoJrMYwo",   // Math: Algebra
+    "sat11" to "https://www.youtube.com/watch?v=MOOxxunKzwQ",   // Math: Advanced Math
+    "sat12" to "https://www.youtube.com/watch?v=o9mNFl-OxpI",   // Math: Problem-Solving and Data Analysis
+    "sat13" to "https://www.youtube.com/watch?v=xc1eyySSDPg"   // Math: Geometry and Trigonometry
+)
+
+// ===================== MA'LUMOT MODELLARI =====================
+
+data class Lesson(val id: String, val title: String, val text: String, val example: String)
+
+data class Question(val text: String, val options: List<String>, val correct: Int, val explanation: String)
+
+data class Course(
+    val id: String,
+    val title: String,
+    val emoji: String,
+    val desc: String,
+    val color: Color,
+    val lessons: List<Lesson>,
+    val questions: List<Question>
+)
+
+fun q(t: String, a: String, b: String, c: String, d: String, ans: Int, ex: String): Question =
+    Question(t, listOf(a, b, c, d), ans, ex)
+
+
+val COURSES: List<Course> = listOf(
+    Course(
+        id = "mat", title = "Matematika", emoji = "🧮",
+        desc = "Arifmetika, algebra, geometriya va statistika asoslari",
+        color = Color(0xFF2563EB),
+        lessons = listOf(
+            Lesson("mat1", "Natural va butun sonlar",
+                "Natural sonlar 1, 2, 3, ... qatorini tashkil etadi. Butun sonlar natural sonlar, ularga qarama-qarshi sonlar va nolni o'z ichiga oladi. Juft sonlar 2 ga qoldiqsiz bo'linadi. Raqamlari yig'indisi 3 ga bo'linadigan son 3 ga bo'linadi. Tub son faqat 1 ga va o'ziga bo'linadi (2, 3, 5, 7, 11, ...).",
+                "EKUB(12, 18) = 6\nEKUK(12, 18) = 36"),
+            Lesson("mat2", "Kasrlar va foizlar",
+                "Kasrlarni qo'shish va ayirishda avval umumiy maxraj topiladi. Kasrlarni ko'paytirishda suratlar suratlarga, maxrajlar maxrajlarga ko'paytiriladi. Foiz — sonning yuzdan bir ulushi, ya'ni 1% = 0,01. A sonning p foizi A * p / 100 ga teng.",
+                "1/2 + 1/3 = 3/6 + 2/6 = 5/6\n200 ning 15% i = 200 * 15 / 100 = 30"),
+            Lesson("mat3", "Chiziqli tenglamalar",
+                "ax + b = 0 ko'rinishidagi tenglama chiziqli tenglama deyiladi. Agar a ≠ 0 bo'lsa, yechim x = -b / a bo'ladi. Tenglamaning ikkala tomoniga bir xil sonni qo'shish yoki uni nolga teng bo'lmagan songa ko'paytirish ildizni o'zgartirmaydi.",
+                "3x + 5 = 20\n3x = 15\nx = 5"),
+            Lesson("mat4", "Kvadrat tenglamalar",
+                "ax² + bx + c = 0 (a ≠ 0) kvadrat tenglama deyiladi. Diskriminant D = b² - 4ac. D > 0 bo'lsa ikkita ildiz, D = 0 bo'lsa bitta ildiz bor, D < 0 bo'lsa haqiqiy ildiz yo'q. Ildizlar x = (-b ± √D) / (2a). Viyet teoremasi: x1 + x2 = -b/a, x1 * x2 = c/a.",
+                "x² - 5x + 6 = 0\nD = 25 - 24 = 1\nx = (5 ± 1) / 2 → x1 = 3, x2 = 2"),
+            Lesson("mat5", "Tengsizliklar",
+                "Tengsizlikning ikkala tomoniga bir xil son qo'shilsa, tengsizlik belgisi o'zgarmaydi. Musbat songa ko'paytirilsa yoki bo'linsa ham o'zgarmaydi. Manfiy songa ko'paytirilsa yoki bo'linsa, tengsizlik belgisi teskarisiga o'zgaradi. Yechim odatda oraliq ko'rinishida yoziladi.",
+                "-2x > 6\nx < -3   (belgi o'zgardi)"),
+            Lesson("mat6", "Funksiya va grafiklar",
+                "Funksiya har bir x qiymatga bitta y qiymatni mos qo'yadi. y = kx + b chiziqli funksiyaning grafigi to'g'ri chiziq: k — og'ish koeffitsiyenti, b — grafik Oy o'qini kesadigan nuqta. y = ax² + bx + c kvadrat funksiyaning grafigi parabola, uning uchi x = -b / (2a) nuqtada joylashadi.",
+                "y = 2x - 1\nx = 0 → y = -1\nx = 1 → y = 1"),
+            Lesson("mat7", "Arifmetik va geometrik progressiya",
+                "Arifmetik progressiyada har bir had oldingisiga bir xil d soni qo'shilishi bilan hosil bo'ladi: a_n = a_1 + (n - 1)d, yig'indi S_n = (a_1 + a_n) * n / 2. Geometrik progressiyada har bir had oldingisini q ga ko'paytirish bilan hosil bo'ladi: b_n = b_1 * q^(n-1).",
+                "2, 5, 8, ... → d = 3, a_10 = 2 + 9 * 3 = 29\n3, 6, 12, ... → q = 2, b_5 = 3 * 2^4 = 48"),
+            Lesson("mat8", "Daraja va logarifm",
+                "Daraja xossalari: a^m * a^n = a^(m+n), a^m / a^n = a^(m-n), (a^m)^n = a^(m*n), a^0 = 1 (a ≠ 0). Agar a^x = b bo'lsa, x = log_a(b). Logarifm xossalari: log(xy) = log x + log y, log(x/y) = log x - log y, log(x^k) = k * log x.",
+                "log_2(8) = 3, chunki 2^3 = 8\n2^3 * 2^4 = 2^7 = 128"),
+            Lesson("mat9", "Planimetriya (uchburchak, aylana)",
+                "Uchburchak burchaklarining yig'indisi 180° ga teng. To'g'ri burchakli uchburchakda Pifagor teoremasi o'rinli: a² + b² = c². Uchburchak yuzi S = a * h / 2. Aylana uzunligi 2πr, doira yuzi πr².",
+                "Katetlar 3 va 4 bo'lsa:\nc² = 9 + 16 = 25 → c = 5"),
+            Lesson("mat10", "Trigonometriya asoslari",
+                "To'g'ri burchakli uchburchakda sin = qarshi katet / gipotenuza, cos = yondosh katet / gipotenuza, tg = qarshi katet / yondosh katet. Asosiy ayniyat: sin²α + cos²α = 1. Muhim qiymatlar: sin 30° = 1/2, cos 60° = 1/2, sin 45° = √2/2, sin 90° = 1.",
+                "sin 30° = 1/2\ncos 60° = 1/2"),
+            Lesson("mat11", "Ehtimollik va statistika",
+                "Ehtimollik = qulay hodisalar soni / barcha teng imkoniyatli hodisalar soni; u 0 dan 1 gacha bo'ladi. O'rta arifmetik — sonlar yig'indisining ularning soniga nisbati. Moda — eng ko'p uchraydigan qiymat, mediana — tartiblangan qatorning o'rtasidagi qiymat.",
+                "Kub tashlanganda juft son tushishi: 3/6 = 1/2\n2, 3, 3, 5, 7 → o'rta = 4, moda = 3, mediana = 3")
+        ),
+        questions = listOf(
+            q("3x + 5 = 20 tenglamada x nimaga teng?", "3", "5", "7", "15", 1, "3x = 15 bo'lgani uchun x = 5."),
+            q("200 ning 15% i nechaga teng?", "20", "25", "30", "35", 2, "200 * 15 / 100 = 30."),
+            q("x² - 5x + 6 = 0 tenglamaning ildizlari qaysi?", "1 va 6", "2 va 3", "-2 va -3", "5 va 1", 1, "Viyet teoremasi: yig'indi 5, ko'paytma 6 → 2 va 3."),
+            q("2, 5, 8, ... arifmetik progressiyaning 10-hadi nechaga teng?", "27", "29", "32", "30", 1, "d = 3, a_10 = 2 + 9 * 3 = 29."),
+            q("Katetlari 6 va 8 bo'lgan to'g'ri burchakli uchburchakning gipotenuzasi?", "10", "12", "14", "48", 0, "36 + 64 = 100, demak c = 10."),
+            q("log_2(32) nimaga teng?", "4", "5", "6", "16", 1, "2^5 = 32."),
+            q("-2x > 6 tengsizlikning yechimi qaysi?", "x > 3", "x < 3", "x > -3", "x < -3", 3, "Manfiy songa bo'lganda belgi o'zgaradi: x < -3."),
+            q("sin 30° nimaga teng?", "1/2", "√3/2", "1", "√2/2", 0, "sin 30° = 1/2."),
+            q("Oddiy kubik tashlanganda 5 dan katta son tushish ehtimoli?", "1/6", "1/3", "1/2", "2/3", 1, "Qulay natijalar: 5 va 6 → 2/6 = 1/3."),
+            q("y = x² - 4x + 3 parabolaning uchi qaysi x da joylashgan?", "2", "-2", "4", "1", 0, "x = -b / (2a) = 4 / 2 = 2.")
+        )
+    ),
+    Course(
+        id = "ona", title = "Ona tili", emoji = "📖",
+        desc = "Fonetika, morfologiya, sintaksis, imlo va nutq madaniyati",
+        color = Color(0xFF16A34A),
+        lessons = listOf(
+            Lesson("ona1", "Fonetika va grafika",
+                "Fonetika nutq tovushlarini o'rganadi. Tovushlar unli va undoshlarga bo'linadi. O'zbek tilida 6 ta unli tovush bor: a, e, i, o, u, o'. Undoshlar jarangli va jarangsiz bo'ladi. So'zdagi bo'g'inlar soni unlilar soniga teng.",
+                "maktab → mak-tab (2 bo'g'in)\nkitob → ki-tob (2 bo'g'in)"),
+            Lesson("ona2", "Leksikologiya (ma'no turlari)",
+                "Leksikologiya so'zning ma'nosini o'rganadi. So'z to'g'ri yoki ko'chma ma'noda qo'llanadi. Ma'nosi yaqin so'zlar sinonim, qarama-qarshi ma'noli so'zlar antonim, shakli bir xil lekin ma'nosi boshqa so'zlar omonim deyiladi.",
+                "chiroyli – go'zal (sinonim)\nyaxshi – yomon (antonim)\no't (olov) – o't (o'tmoq) (omonim)"),
+            Lesson("ona3", "So'z yasalishi",
+                "Tuzilishiga ko'ra so'zlar tub, yasama, qo'shma va juft bo'ladi. Yasama so'z qo'shimcha yordamida yasaladi: -chi, -li, -lik, -siz va boshqalar. Qo'shma so'z ikki so'zning qo'shilishidan, juft so'z ikki so'zning juftlashuvidan hosil bo'ladi.",
+                "ish → ishchi (yasama)\noq + qush → oqqush (qo'shma)\nota-ona (juft)"),
+            Lesson("ona4", "Ot",
+                "Ot narsa va shaxs nomini bildiradi, kim? nima? so'rog'iga javob beradi. Otlar atoqli (Toshkent) va turdosh (shahar) bo'ladi. Otlar ko'plik (-lar) va egalik qo'shimchalarini oladi hamda 6 ta kelishikda turlanadi: bosh, qaratqich, tushum, jo'nalish, o'rin-payt, chiqish.",
+                "kitob → kitobning (qaratqich), kitobni (tushum),\nkitobga (jo'nalish), kitobda (o'rin-payt), kitobdan (chiqish)"),
+            Lesson("ona5", "Sifat va son",
+                "Sifat narsaning belgisini bildiradi va qanday? qanaqa? so'roqlariga javob beradi. Sifat darajalari: oddiy (yaxshi), qiyosiy (yaxshiroq), orttirma (eng yaxshi, juda yaxshi). Son miqdor yoki tartibni bildiradi: sanoq son (besh), tartib son (beshinchi).",
+                "chiroyli – chiroyliroq – eng chiroyli\nbesh – beshinchi"),
+            Lesson("ona6", "Olmosh",
+                "Olmosh ot, sifat yoki son o'rnida qo'llanadi. Turlari: kishilik (men, sen, u, biz, siz, ular), ko'rsatish (bu, shu, o'sha), so'roq (kim, nima, qaysi), o'zlik (o'z), belgilash (hamma, har bir), bo'lishsizlik (hech kim, hech narsa), gumon (kimdir, nimadir).",
+                "Ali kitob o'qidi. U kitobni yoqtirdi.\n(U — kishilik olmoshi)"),
+            Lesson("ona7", "Fe'l",
+                "Fe'l ish-harakat yoki holatni bildiradi va nima qildi? nima qiladi? so'roqlariga javob beradi. Fe'l zamonlari: o'tgan zamon (yozdi), hozirgi zamon (yozyapti), kelasi zamon (yozadi). Bo'lishsizlik shakli -ma qo'shimchasi bilan yasaladi.",
+                "yozdi – yozmadi\nyozyapti – yozmayapti"),
+            Lesson("ona8", "Ravish va yordamchi so'zlar",
+                "Ravish harakatning belgisini bildiradi va qanday? qachon? qayerda? so'roqlariga javob beradi (tez, ertaga, yaqin). Yordamchi so'zlar: ko'makchi (bilan, uchun, kabi), bog'lovchi (va, lekin, ammo), yuklama (faqat, hatto, -mi).",
+                "Ertaga tez keling.\n(ertaga, tez — ravish)"),
+            Lesson("ona9", "Gap bo'laklari",
+                "Gapning asosiy bo'laklari ega va kesimdir. Ikkinchi darajali bo'laklar: aniqlovchi, to'ldiruvchi va hol. Ega kim? nima? so'rog'iga, kesim nima qildi? so'rog'iga javob beradi. Aniqlovchi qanday? qaysi? so'rog'iga, to'ldiruvchi kimni? nimani? kimga? kabi so'roqlarga javob beradi.",
+                "Talaba kitobni o'qidi.\nTalaba — ega, o'qidi — kesim, kitobni — to'ldiruvchi"),
+            Lesson("ona10", "Qo'shma gap",
+                "Ikki yoki undan ortiq sodda gapdan tuzilgan gap qo'shma gap deyiladi. Turlari: bog'langan qo'shma gap (va, lekin, ammo bilan), ergash gapli qo'shma gap (agar, chunki, garchi kabi vositalar bilan) va bog'lovchisiz qo'shma gap.",
+                "Yomg'ir yog'di, lekin biz yurishda davom etdik.\nAgar vaqt bo'lsa, kinoga boramiz."),
+            Lesson("ona11", "Imlo qoidalari",
+                "Gap boshi va atoqli otlar bosh harf bilan yoziladi. Qo'shma so'zlar ko'pincha qo'shib (oqqush), juft so'zlar chiziqcha bilan (ota-ona) yoziladi. Tutuq belgisi (ʼ) unlidan keyin keladigan unli tovushni ajratib ko'rsatadi: ma'no, san'at. Qo'shimchalar so'zga qo'shib yoziladi.",
+                "Toshkent shahri\nma'no, san'at\nota-ona, oqqush"),
+            Lesson("ona12", "Tinish belgilari",
+                "Darak gap oxiriga nuqta, so'roq gap oxiriga so'roq belgisi, his-hayajonli gap oxiriga undov belgisi qo'yiladi. Uyushiq bo'laklar orasida vergul yoziladi. Ko'chirma gap qo'shtirnoq ichida beriladi. Ega va kesim ot bo'lganda orasiga odatda tire qo'yiladi.",
+                "Toshkent — O'zbekiston poytaxti.\nMen kitob, daftar va qalam oldim."),
+            Lesson("ona13", "Nutq uslublari",
+                "Nutq uslublari: so'zlashuv, badiiy, publitsistik, ilmiy va rasmiy uslub. Ilmiy uslub aniqlik va atamalarga tayanadi. Rasmiy uslub ariza, buyruq, bayonnoma kabi hujjatlarda qo'llanadi. Badiiy uslub obrazlilik va hissiyotga boy bo'ladi.",
+                "Ariza, ma'lumotnoma — rasmiy uslub\nHikoya, she'r — badiiy uslub")
+        ),
+        questions = listOf(
+            q("O'zbek tilida nechta unli tovush bor?", "5", "6", "8", "29", 1, "Unlilar: a, e, i, o, u, o'."),
+            q("\"Yaxshi\" so'zining antonimi qaysi?", "chiroyli", "yomon", "katta", "yaxshiroq", 1, "Qarama-qarshi ma'noli so'zlar antonim: yaxshi – yomon."),
+            q("\"Kitobning\" so'zi qaysi kelishikda?", "tushum", "qaratqich", "jo'nalish", "chiqish", 1, "-ning qo'shimchasi qaratqich kelishigini yasaydi."),
+            q("Quyidagilardan qaysi biri olmosh?", "kitob", "tez", "biz", "yozdi", 2, "Biz — kishilik olmoshi."),
+            q("\"Oqqush\" so'zi tuzilishiga ko'ra qanday so'z?", "tub", "yasama", "qo'shma", "juft", 2, "Oq + qush — ikki so'z qo'shilib yozilgan qo'shma so'z."),
+            q("\"Ota-ona\" so'zi qanday yoziladi?", "qo'shib", "chiziqcha bilan", "ajratib", "tutuq belgisi bilan", 1, "Juft so'zlar chiziqcha bilan yoziladi."),
+            q("\"Talaba kitobni o'qidi.\" gapida kesim qaysi?", "Talaba", "kitobni", "o'qidi", "hammasi", 2, "Kesim nima qildi? so'rog'iga javob beradi: o'qidi."),
+            q("Qaysi so'z yasama so'z?", "kitob", "ishchi", "tosh", "ko'z", 1, "Ishchi — ish + -chi qo'shimchasi bilan yasalgan."),
+            q("\"Ertaga\" so'zi qaysi so'z turkumiga kiradi?", "ot", "sifat", "ravish", "fe'l", 2, "Ertaga — qachon? so'rog'iga javob beradi, ravish."),
+            q("\"Maktab\" so'zi nechta bo'g'indan iborat?", "1", "2", "3", "4", 1, "Mak-tab — 2 ta unli, 2 ta bo'g'in.")
+        )
+    ),
+    Course(
+        id = "tar", title = "Tarix", emoji = "🏛️",
+        desc = "O'zbekiston va jahon tarixining asosiy davrlari",
+        color = Color(0xFFEA580C),
+        lessons = listOf(
+            Lesson("tar1", "Qadimgi Markaziy Osiyo",
+                "Hududda Baqtriya, So'g'diyona va Xorazm kabi qadimiy davlatlar bo'lgan. Zardushtiylikning muqaddas kitobi Avesto hisoblanadi. Miloddan avvalgi 329–327-yillarda Iskandar Zulqarnayn Markaziy Osiyoga yurish qildi. Keyinchalik Kushon podsholigi gullab-yashnadi, Buyuk ipak yo'li Sharq va G'arbni bog'ladi.",
+                "Buyuk ipak yo'li: Xitoy → Markaziy Osiyo → O'rta yer dengizi"),
+            Lesson("tar2", "Ilk o'rta asrlar va arab xalifaligi",
+                "VIII asr boshlarida arablar Movarounnahrni zabt etdi va hududda islom dini tarqaldi. IX–X asrlarda Somoniylar davlati (poytaxti Buxoro) mustaqil davlat sifatida rivojlandi. Bu davrda Muhammad al-Xorazmiy (algebra), Beruniy va Ibn Sino kabi buyuk olimlar yetishib chiqdi.",
+                "Ibn Sino — \"Tib qonunlari\" asari muallifi"),
+            Lesson("tar3", "Amir Temur va temuriylar davlati",
+                "Amir Temur 1336-yilda Kesh (Shahrisabz) yaqinida tug'ilgan. 1370-yilda hokimiyatni qo'lga olib, poytaxtini Samarqandga qo'ygan. U 1405-yilda Otror shahrida vafot etgan. Temuriylar davrida fan va madaniyat rivojlandi: Mirzo Ulug'bek (1394–1449) Samarqandda rasadxona qurdi, Alisher Navoiy (1441–1501) ijod qildi.",
+                "Amir Temur: 1336 — tug'ilgan, 1370 — hokimiyat, 1405 — vafot"),
+            Lesson("tar4", "Buxoro, Xiva va Qo'qon xonliklari",
+                "XVIII–XIX asrlarda hududda uchta davlat mavjud edi: Buxoro amirligi (mang'itlar sulolasi), Xiva xonligi (qo'ng'irotlar sulolasi) va 1709-yilda tashkil topgan Qo'qon xonligi. Xonliklar o'rtasidagi o'zaro urushlar va siyosiy tarqoqlik ularni zaiflashtirdi.",
+                "Qo'qon xonligi — 1709-yilda tashkil topgan"),
+            Lesson("tar5", "Rossiya imperiyasi istilosi",
+                "Rossiya imperiyasi XIX asrning ikkinchi yarmida Turkistonni bosib oldi. Toshkent 1865-yilda egallandi, 1867-yilda Turkiston general-gubernatorligi tuzildi. Samarqand 1868-yilda bosib olindi. Buxoro amirligi (1868) va Xiva xonligi (1873) Rossiyaga qaram bo'lib qoldi, Qo'qon xonligi esa 1876-yilda tugatildi.",
+                "1865 — Toshkent, 1867 — general-gubernatorlik,\n1873 — Xiva, 1876 — Qo'qon"),
+            Lesson("tar6", "Jadidchilik harakati",
+                "Jadidchilik XIX asr oxiri – XX asr boshlarida paydo bo'lgan ma'rifiy harakat. Jadidlar yangi usuldagi maktablar ochib, ma'rifat va milliy uyg'onishga chaqirdilar. Mashhur vakillari: Mahmudxo'ja Behbudiy, Abdulla Avloniy, Munavvarqori, Abdurauf Fitrat, Cho'lpon.",
+                "Behbudiy — \"Padarkush\" dramasi muallifi"),
+            Lesson("tar7", "Sovet davri",
+                "1924-yilda O'zbekiston Sovet Sotsialistik Respublikasi tashkil topdi va 1925-yilda SSSRga qo'shildi. Poytaxt dastlab Samarqand, 1930-yildan Toshkent bo'ldi. 1937–1938-yillarda qatag'on avj oldi, ko'plab ziyolilar qurbon bo'ldi. Iqtisodiyotda paxta yakkahokimligi hukm surdi.",
+                "1924 — O'zbekiston SSR\n1930 — poytaxt Toshkent"),
+            Lesson("tar8", "O'zbekiston mustaqilligi",
+                "1991-yil 31-avgustda O'zbekiston mustaqilligi e'lon qilindi; Mustaqillik kuni 1-sentyabrda nishonlanadi. 1992-yil 8-dekabrda mustaqil O'zbekistonning birinchi Konstitutsiyasi qabul qilindi, shu kun Konstitutsiya kuni hisoblanadi. 2023-yilda yangi tahrirdagi Konstitutsiya referendumda qabul qilindi.",
+                "1991 — mustaqillik\n1992-yil 8-dekabr — Konstitutsiya"),
+            Lesson("tar9", "Jahon tarixidan asosiy davrlar",
+                "Jahon tarixi qadimgi dunyo, o'rta asrlar, yangi davr va eng yangi davrga bo'linadi. G'arbiy Rim imperiyasining qulashi (476) o'rta asrlar boshi hisoblanadi. 1492-yilda Kolumb Amerikaga yetib bordi, 1789-yilda Fransuz inqilobi boshlandi. Birinchi jahon urushi 1914–1918, Ikkinchi jahon urushi 1939–1945-yillarda bo'lgan.",
+                "476 — Rim qulashi\n1492 — Kolumb\n1789 — Fransuz inqilobi")
+        ),
+        questions = listOf(
+            q("Avesto qaysi dinning muqaddas kitobi?", "Zardushtiylik", "Buddaviylik", "Xristianlik", "Islom", 0, "Avesto — zardushtiylikning muqaddas kitobi."),
+            q("Amir Temur qaysi yilda tug'ilgan?", "1256", "1336", "1370", "1405", 1, "Amir Temur 1336-yilda Kesh yaqinida tug'ilgan."),
+            q("Amir Temur davlatining poytaxti qaysi shahar edi?", "Buxoro", "Samarqand", "Xiva", "Toshkent", 1, "Poytaxt — Samarqand."),
+            q("Samarqandda mashhur rasadxona qurgan temuriy hukmdor kim?", "Bobur", "Husayn Boyqaro", "Mirzo Ulug'bek", "Navoiy", 2, "Rasadxonani Mirzo Ulug'bek qurgan."),
+            q("Toshkent Rossiya imperiyasi tomonidan qaysi yilda bosib olindi?", "1860", "1865", "1873", "1876", 1, "Toshkent 1865-yilda egallandi."),
+            q("Qo'qon xonligi qaysi yilda tugatildi?", "1865", "1868", "1873", "1876", 3, "Qo'qon xonligi 1876-yilda tugatildi."),
+            q("Quyidagilardan qaysi biri jadidchilik vakili?", "Amir Temur", "Mahmudxo'ja Behbudiy", "Ibn Sino", "Beruniy", 1, "Behbudiy — jadidchilikning yirik namoyandasi."),
+            q("O'zbekiston SSR qaysi yilda tashkil topgan?", "1917", "1924", "1941", "1991", 1, "O'zbekiston SSR 1924-yilda tuzilgan."),
+            q("O'zbekistonda Konstitutsiya kuni qachon nishonlanadi?", "1-sentyabr", "8-dekabr", "21-mart", "9-may", 1, "Konstitutsiya 1992-yil 8-dekabrda qabul qilingan."),
+            q("Algebra fanining asoschisi hisoblangan olim kim?", "Al-Xorazmiy", "Beruniy", "Ibn Sino", "Farobiy", 0, "Muhammad al-Xorazmiy algebra asoschisi sanaladi.")
+        )
+    ),
+    Course(
+        id = "sat", title = "SAT", emoji = "🎯",
+        desc = "Reading & Writing hamda Math bo'limlariga tayyorgarlik",
+        color = Color(0xFF7C3AED),
+        lessons = listOf(
+            Lesson("sat1", "Words in Context",
+                "Bu savollarda so'zning matndagi (kontekstdagi) ma'nosi so'raladi. Avval gapning umumiy ma'nosini tushuning, bo'sh joyga o'zingiz mos so'z o'ylab toping, keyin variantlarni solishtiring. So'zning eng tanish ma'nosi emas, kontekstga mos ma'nosi to'g'ri bo'ladi.",
+                "The senator's speech was so compelling that skeptics changed their minds.\ncompelling = persuasive"),
+            Lesson("sat2", "Central Ideas and Details",
+                "Central idea — matnning asosiy g'oyasi, details esa uni qo'llab-quvvatlaydi. Har bir matndan \"muallif nimani isbotlamoqchi?\" degan savolga javob toping. Juda tor (faqat bitta detalga oid) yoki juda keng variantlardan ehtiyot bo'ling.",
+                "To'g'ri javob matndagi ma'lumot bilan to'liq tasdiqlanadi."),
+            Lesson("sat3", "Text Structure and Purpose",
+                "Bu savollarda muallif matnni qanday qurgani (muammo-yechim, taqqoslash, sabab-oqibat) va nima uchun yozgani so'raladi. Javob variantlaridagi fe'llarga e'tibor bering: describes, argues, criticizes, illustrates, introduces.",
+                "The author introduces a problem and then proposes a solution."),
+            Lesson("sat4", "Cross-Text Connections",
+                "Ikki qisqa matn beriladi va ular orasidagi munosabat so'raladi: kelishadimi, qarshi chiqadimi yoki biri ikkinchisini to'ldiradimi. Avval Text 1 va Text 2 pozitsiyasini alohida aniqlang, keyin taqqoslang.",
+                "Text 2 qarshi dalil keltiradi → Text 2 challenges Text 1."),
+            Lesson("sat5", "Command of Evidence",
+                "Qaysi dalil (matn parchasi yoki grafik/jadval) berilgan da'voni eng yaxshi qo'llab-quvvatlashi so'raladi. Avval da'voni aniq tushuning, so'ng unga to'g'ridan-to'g'ri mos keladigan dalilni tanlang. Jadval va grafikda raqamlarni diqqat bilan o'qing.",
+                "Claim: Sales increased in 2022.\nEvidence: 2021 — 100 units, 2022 — 150 units."),
+            Lesson("sat6", "Inferences",
+                "Inference — matndagi faktlardan kelib chiqadigan mantiqiy xulosa. To'g'ri javob matn bilan mos bo'ladi, lekin so'zma-so'z yozilmagan bo'lishi mumkin. Always, never, all kabi haddan tashqari kuchli so'zlari bor variantlardan ehtiyot bo'ling.",
+                "Matn: The experiment worked in every trial.\nXulosa: The method is reliable."),
+            Lesson("sat7", "Standard English Conventions (grammar)",
+                "Bu bo'lim grammatika va tinish belgilarini tekshiradi: subject-verb agreement, verb tense, pronoun agreement, punctuation. Ikkita mustaqil gapni semicolon (;) yoki comma + and/but/so bilan bog'lash mumkin. Faqat comma bilan bog'lash — comma splice xatosi.",
+                "The group of students is late. (is, chunki subject — group)\nI was tired; I went home. (to'g'ri)"),
+            Lesson("sat8", "Transitions",
+                "Transition so'zlari gaplar orasidagi mantiqiy aloqani bildiradi. Qarama-qarshilik: However, But. Qo'shimcha: Moreover, Additionally. Natija: Therefore, As a result. Misol: For example. Avval ikki gap orasidagi munosabatni aniqlang, keyin mos so'zni tanlang.",
+                "The test was difficult. However, most students passed."),
+            Lesson("sat9", "Rhetorical Synthesis",
+                "Sizga bir nechta qisqa notes (bullet) beriladi va ularni ma'lum maqsadga mos gapga aylantirish so'raladi. Avval maqsadni aniqlang (compare, emphasize, introduce), so'ng faqat shu maqsadga kerakli ma'lumotlarni to'g'ri qamrab olgan variantni tanlang.",
+                "Goal: emphasize the difference.\nTo'g'ri variant ikkala ma'lumotni qarama-qarshi qo'yadi."),
+            Lesson("sat10", "Math: Algebra",
+                "Algebra bo'limida linear equations, linear inequalities va systems of equations uchraydi. y = mx + b da m — slope, b — y-intercept. Tenglamalar sistemasi substitution (o'rniga qo'yish) yoki elimination (qo'shish/ayirish) usuli bilan yechiladi.",
+                "2x + 3 = 11 → x = 4\nx + y = 5 va x - y = 1 → x = 3, y = 2"),
+            Lesson("sat11", "Math: Advanced Math",
+                "Advanced Math bo'limida quadratic, polynomial va exponential funksiyalar uchraydi. Ko'paytuvchilarga ajratish: x² - 9 = (x - 3)(x + 3). Exponential growth formulasi: y = a(1 + r)^t, bu yerda a — boshlang'ich qiymat, r — o'sish foizi, t — vaqt.",
+                "1000 ga yiliga 10% o'sish, 2 yildan keyin:\n1000 * 1.1² = 1210"),
+            Lesson("sat12", "Math: Problem-Solving and Data Analysis",
+                "Bu bo'limda ratios, rates, percentages, unit conversion, mean/median, probability va scatterplot savollari uchraydi. Percent change = (new - old) / old * 100%. Mean = barcha sonlar yig'indisi / sonlar soni.",
+                "50 dan 60 ga: (60 - 50) / 50 = 0.2 = 20%\nMean(2, 4, 6, 8) = 20 / 4 = 5"),
+            Lesson("sat13", "Math: Geometry and Trigonometry",
+                "Bu bo'limda area, volume, circles, right triangles va trigonometriya uchraydi. Pythagorean theorem: a² + b² = c². Maxsus uchburchaklar: 45-45-90 (tomonlar 1 : 1 : √2) va 30-60-90 (1 : √3 : 2). Aylana: area = πr², circumference = 2πr. Muhim: sin(x) = cos(90° - x).",
+                "Legs 5 va 12 → hypotenuse = 13\nsin(30°) = cos(60°) = 1/2")
+        ),
+        questions = listOf(
+            q("The senator's speech was so compelling that even skeptics changed their minds. \"Compelling\" most nearly means:", "persuasive", "required", "unpleasant", "lengthy", 0, "Skeptics changed their minds, so the speech was persuasive."),
+            q("The list of ingredients ___ printed on the back of the box.", "are", "is", "were", "have been", 1, "Subject is \"list\" (singular), so \"is\"."),
+            q("The experiment was costly. ___, the team decided to continue.", "Similarly,", "For example,", "However,", "Therefore,", 2, "Two sentences contrast, so \"However\" is the right transition."),
+            q("If 2x + 3 = 11, what is x?", "5", "3", "7", "4", 3, "2x = 8, so x = 4."),
+            q("What is the slope of the line y = 3x - 7?", "3", "-7", "7", "1/3", 0, "In y = mx + b, m is the slope: 3."),
+            q("A price rises from 50 to 60. What is the percent increase?", "10%", "15%", "20%", "25%", 2, "(60 - 50) / 50 = 0.2 = 20%."),
+            q("What is the mean of 2, 4, 6, and 8?", "4", "5", "6", "20", 1, "(2 + 4 + 6 + 8) / 4 = 5."),
+            q("Which is the factored form of x² - 9?", "(x - 3)²", "(x - 3)(x + 3)", "(x + 9)(x - 1)", "x(x - 9)", 1, "Difference of squares: a² - b² = (a - b)(a + b)."),
+            q("A right triangle has legs 5 and 12. What is the hypotenuse?", "10", "15", "13", "17", 2, "25 + 144 = 169, so c = 13."),
+            q("Which sentence is punctuated correctly?", "I was tired, I went home.", "I was tired I went home.", "I was tired, went I home.", "I was tired; I went home.", 3, "A semicolon correctly joins two independent clauses; a comma alone is a comma splice.")
+        )
+    )
+)
+
+fun findCourse(id: String): Course? = COURSES.firstOrNull { it.id == id }
+
+fun findLesson(id: String): Pair<Course, Lesson>? {
+    for (c in COURSES) {
+        val l = c.lessons.firstOrNull { it.id == id }
+        if (l != null) return Pair(c, l)
+    }
+    return null
+}
+
+val ALL_LESSON_IDS: Set<String> = COURSES.flatMap { c -> c.lessons.map { it.id } }.toSet()
+
+// ===================== SAQLASH (SharedPreferences) =====================
+
+object Store {
+    private fun sp(c: Context) = c.getSharedPreferences("edu_prefs", Context.MODE_PRIVATE)
+
+    private fun users(c: Context): JSONArray =
+        try {
+            JSONArray(sp(c).getString("users", "[]") ?: "[]")
+        } catch (e: Exception) {
+            JSONArray()
+        }
+
+    fun findUser(c: Context, contact: String): JSONObject? {
+        val a = users(c)
+        for (i in 0 until a.length()) {
+            val o = a.optJSONObject(i) ?: continue
+            if (o.optString("contact") == contact) return o
+        }
+        return null
+    }
+
+    fun addUser(c: Context, name: String, contact: String, hash: String): Boolean {
+        return try {
+            val a = users(c)
+            a.put(JSONObject().put("name", name).put("contact", contact).put("hash", hash))
+            sp(c).edit().putString("users", a.toString()).commit()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun themeMode(c: Context): Int {
+        val m = sp(c).getInt("theme_mode", 0)
+        return if (m in 0..2) m else 0
+    }
+
+    fun setThemeMode(c: Context, m: Int) {
+        sp(c).edit().putInt("theme_mode", m).apply()
+    }
+
+    fun session(c: Context): String = sp(c).getString("session", "") ?: ""
+
+    fun setSession(c: Context, contact: String) {
+        sp(c).edit().putString("session", contact).apply()
+    }
+
+    fun done(c: Context, contact: String): Set<String> =
+        (sp(c).getString("done_" + contact, "") ?: "").split(",").filter { it.isNotBlank() }.toSet()
+
+    fun markDone(c: Context, contact: String, lessonId: String) {
+        val s = done(c, contact).toMutableSet()
+        s.add(lessonId)
+        sp(c).edit().putString("done_" + contact, s.joinToString(",")).apply()
+    }
+
+    fun setRecent(c: Context, contact: String, type: String, id: String) {
+        try {
+            val o = JSONObject().put("type", type).put("id", id).put("ts", System.currentTimeMillis())
+            sp(c).edit().putString("recent_" + contact, o.toString()).apply()
+        } catch (e: Exception) {
+            // e'tiborsiz qoldiriladi
+        }
+    }
+
+    fun recent(c: Context, contact: String): JSONObject? =
+        try {
+            val s = sp(c).getString("recent_" + contact, null)
+            if (s == null) null else JSONObject(s)
+        } catch (e: Exception) {
+            null
+        }
+
+    fun results(c: Context, contact: String): List<JSONObject> {
+        return try {
+            val a = JSONArray(sp(c).getString("results_" + contact, "[]") ?: "[]")
+            val list = ArrayList<JSONObject>()
+            for (i in 0 until a.length()) {
+                val o = a.optJSONObject(i)
+                if (o != null) list.add(o)
+            }
+            list
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun addResult(c: Context, contact: String, courseId: String, score: Int, total: Int) {
+        try {
+            val list = results(c, contact).toMutableList()
+            list.add(
+                JSONObject().put("c", courseId).put("s", score).put("t", total)
+                    .put("ts", System.currentTimeMillis())
+            )
+            val trimmed = if (list.size > 50) list.subList(list.size - 50, list.size) else list
+            val arr = JSONArray()
+            for (o in trimmed) arr.put(o)
+            sp(c).edit().putString("results_" + contact, arr.toString()).apply()
+        } catch (e: Exception) {
+            // e'tiborsiz qoldiriladi
+        }
+    }
+}
+
+// ===================== YORDAMCHI FUNKSIYALAR =====================
+
+fun sha256(s: String): String =
+    MessageDigest.getInstance("SHA-256").digest(s.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
+
+fun normContact(raw: String): String {
+    val t = raw.trim()
+    return if (t.contains("@")) t.lowercase() else t.replace(Regex("[\\s\\-()]"), "")
+}
+
+fun validContact(c: String): Boolean {
+    if (c.isEmpty()) return false
+    return if (c.contains("@")) {
+        Patterns.EMAIL_ADDRESS.matcher(c).matches()
+    } else {
+        Regex("^\\+?[0-9]{9,13}\$").matches(c)
+    }
+}
+
+fun fmt(ts: Long): String =
+    try {
+        SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(ts))
+    } catch (e: Exception) {
+        ""
+    }
+
+fun courseDone(course: Course, done: Set<String>): Int = course.lessons.count { it.id in done }
+
+fun percentOf(r: JSONObject): Int {
+    val t = r.optInt("t")
+    return if (t <= 0) 0 else r.optInt("s") * 100 / t
+}
+
+// ===================== RANGLAR VA TEMA =====================
+
+val Brand1 = Color(0xFF6366F1)
+val Brand2 = Color(0xFF8B5CF6)
+val Brand3 = Color(0xFFEC4899)
+val BrandColors: List<Color> = listOf(Brand1, Brand2, Brand3)
+val OkGreen = Color(0xFF22C55E)
+val BadRed = Color(0xFFEF4444)
+val OnBrand = Color(0xFFFFFFFF)
+val CodeText = Color(0xFFE2E8F0)
+
+class EduColors(
+    val bg: Color,
+    val surface: Color,
+    val surfaceHi: Color,
+    val text: Color,
+    val textSub: Color,
+    val line: Color,
+    val dark: Boolean
+)
+
+val LightEdu = EduColors(
+    bg = Color(0xFFF7F8FC), surface = Color(0xFFFFFFFF), surfaceHi = Color(0xFFEEF0F8),
+    text = Color(0xFF0F172A), textSub = Color(0xFF64748B), line = Color(0xFFE5E7EF), dark = false
+)
+val DarkEdu = EduColors(
+    bg = Color(0xFF0B0F1A), surface = Color(0xFF141A2B), surfaceHi = Color(0xFF1C2438),
+    text = Color(0xFFF1F5F9), textSub = Color(0xFF94A3B8), line = Color(0xFF263049), dark = true
+)
+
+val LocalEdu = staticCompositionLocalOf { LightEdu }
+
+fun courseColors(id: String, dark: Boolean): List<Color> = when (id) {
+    "mat" -> if (dark) listOf(Color(0xFF2563EB), Color(0xFF0891B2)) else listOf(Color(0xFF3B82F6), Color(0xFF06B6D4))
+    "ona" -> if (dark) listOf(Color(0xFF059669), Color(0xFF65A30D)) else listOf(Color(0xFF10B981), Color(0xFF84CC16))
+    "tar" -> if (dark) listOf(Color(0xFFD97706), Color(0xFFDC2626)) else listOf(Color(0xFFF59E0B), Color(0xFFEF4444))
+    else -> if (dark) listOf(Color(0xFF7C3AED), Color(0xFFDB2777)) else listOf(Color(0xFF8B5CF6), Color(0xFFEC4899))
+}
+
+@Composable
+fun EduTheme(mode: Int, content: @Composable () -> Unit) {
+    val sysDark = isSystemInDarkTheme()
+    val dark = when (mode) {
+        1 -> false
+        2 -> true
+        else -> sysDark
+    }
+    val t = if (dark) DarkEdu else LightEdu
+    val bg by animateColorAsState(t.bg, animationSpec = tween(350), label = "bg")
+    val surface by animateColorAsState(t.surface, animationSpec = tween(350), label = "surface")
+    val surfaceHi by animateColorAsState(t.surfaceHi, animationSpec = tween(350), label = "surfaceHi")
+    val text by animateColorAsState(t.text, animationSpec = tween(350), label = "text")
+    val textSub by animateColorAsState(t.textSub, animationSpec = tween(350), label = "textSub")
+    val line by animateColorAsState(t.line, animationSpec = tween(350), label = "line")
+    val edu = EduColors(bg, surface, surfaceHi, text, textSub, line, dark)
+
+    val scheme = if (dark) {
+        darkColorScheme(
+            primary = Brand1, onPrimary = OnBrand,
+            background = edu.bg, onBackground = edu.text,
+            surface = edu.surface, onSurface = edu.text,
+            surfaceVariant = edu.surfaceHi, onSurfaceVariant = edu.textSub,
+            outline = edu.line, error = BadRed,
+            secondaryContainer = Brand1.copy(alpha = 0.22f), onSecondaryContainer = Brand1
+        )
+    } else {
+        lightColorScheme(
+            primary = Brand1, onPrimary = OnBrand,
+            background = edu.bg, onBackground = edu.text,
+            surface = edu.surface, onSurface = edu.text,
+            surfaceVariant = edu.surfaceHi, onSurfaceVariant = edu.textSub,
+            outline = edu.line, error = BadRed,
+            secondaryContainer = Brand1.copy(alpha = 0.16f), onSecondaryContainer = Brand1
+        )
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val ctrl = WindowCompat.getInsetsController(window, view)
+                ctrl.isAppearanceLightStatusBars = !dark
+                ctrl.isAppearanceLightNavigationBars = !dark
+            }
+        }
+    }
+
+    MaterialTheme(colorScheme = scheme) {
+        CompositionLocalProvider(
+            LocalEdu provides edu,
+            LocalContentColor provides edu.text
+        ) {
+            content()
+        }
+    }
+}
+
+// ===================== ACTIVITY =====================
+
+class MainActivity : ComponentActivity() {
+    @Suppress("DEPRECATION")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            if (Build.VERSION.SDK_INT >= 29) {
+                window.isNavigationBarContrastEnforced = false
+            }
+        } catch (e: Exception) {
+            // e'tiborsiz qoldiriladi
+        }
+        setContent { Root() }
+    }
+}
+
+@Composable
+fun Root() {
+    val ctx = LocalContext.current
+    var mode by rememberSaveable { mutableStateOf(Store.themeMode(ctx)) }
+    EduTheme(mode) {
+        EduApp(
+            themeMode = mode,
+            onTheme = { m ->
+                mode = m
+                Store.setThemeMode(ctx, m)
+            }
+        )
+    }
+}
+
+// ===================== UMUMIY KOMPONENTLAR =====================
+
+@Composable
+fun Screen(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        content()
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun Appear(delayMs: Int = 0, content: @Composable () -> Unit) {
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(delayMs.toLong())
+        shown = true
+    }
+    AnimatedVisibility(
+        visible = shown,
+        enter = fadeIn(animationSpec = tween(350)) +
+                slideInVertically(animationSpec = tween(350)) { h -> h / 8 }
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun Modifier.scaleClick(onClick: () -> Unit): Modifier {
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val s by animateFloatAsState(if (pressed) 0.96f else 1f, animationSpec = tween(120), label = "press")
+    return this
+        .graphicsLayer {
+            scaleX = s
+            scaleY = s
+        }
+        .clickable(interactionSource = src, indication = null, onClick = onClick)
+}
+
+@Composable
+fun EduCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    pad: Dp = 20.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val edu = LocalEdu.current
+    val shape = RoundedCornerShape(24.dp)
+    val base = if (edu.dark) {
+        modifier.fillMaxWidth().clip(shape).background(edu.surface).border(1.dp, edu.line, shape)
+    } else {
+        modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = shape,
+                ambientColor = edu.text.copy(alpha = 0.10f),
+                spotColor = edu.text.copy(alpha = 0.10f)
+            )
+            .clip(shape)
+            .background(edu.surface)
+    }
+    val clickMod = if (onClick != null) Modifier.clickable { onClick() } else Modifier
+    Column(modifier = base.then(clickMod).padding(pad)) {
+        content()
+    }
+}
+
+@Composable
+fun Bar(f: Float, fill: Brush, track: Color, height: Dp = 8.dp) {
+    var target by remember { mutableStateOf(0f) }
+    LaunchedEffect(f) { target = f.coerceIn(0f, 1f) }
+    val a by animateFloatAsState(target, animationSpec = tween(800), label = "bar")
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(height))
+            .background(track)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(a)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(height))
+                .background(fill)
+        )
+    }
+}
+
+@Composable
+fun ProgressRing(
+    progress: Float,
+    diameter: Dp,
+    stroke: Dp,
+    track: Color,
+    colors: List<Color>,
+    label: String,
+    labelColor: Color,
+    labelSize: Int = 20
+) {
+    var target by remember { mutableStateOf(0f) }
+    LaunchedEffect(progress) { target = progress.coerceIn(0f, 1f) }
+    val a by animateFloatAsState(target, animationSpec = tween(900), label = "ring")
+    Box(modifier = Modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val sw = stroke.toPx()
+            val tl = Offset(sw / 2f, sw / 2f)
+            val sz = Size(this.size.width - sw, this.size.height - sw)
+            drawArc(
+                color = track,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = tl,
+                size = sz,
+                style = Stroke(width = sw, cap = StrokeCap.Round)
+            )
+            if (a > 0.001f) {
+                drawArc(
+                    brush = Brush.linearGradient(
+                        colors,
+                        start = Offset(0f, 0f),
+                        end = Offset(this.size.width, this.size.height)
+                    ),
+                    startAngle = -90f,
+                    sweepAngle = 360f * a,
+                    useCenter = false,
+                    topLeft = tl,
+                    size = sz,
+                    style = Stroke(width = sw, cap = StrokeCap.Round)
+                )
+            }
+        }
+        Text(label, color = labelColor, fontWeight = FontWeight.ExtraBold, fontSize = labelSize.sp)
+    }
+}
+
+@Composable
+fun GradButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    colors: List<Color> = BrandColors,
+    busy: Boolean = false
+) {
+    val edu = LocalEdu.current
+    val shape = RoundedCornerShape(16.dp)
+    val bgMod = if (enabled) {
+        Modifier.background(Brush.horizontalGradient(colors))
+    } else {
+        Modifier.background(edu.surfaceHi)
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .clip(shape)
+            .then(bgMod)
+            .clickable(enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        if (busy) {
+            CircularProgressIndicator(
+                color = OnBrand,
+                strokeWidth = 2.5.dp,
+                modifier = Modifier.size(22.dp)
+            )
+        } else {
+            Text(
+                text,
+                color = if (enabled) OnBrand else edu.textSub,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun OutlineButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = Brand1
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .clip(shape)
+            .border(1.5.dp, color, shape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+    }
+}
+
+@Composable
+fun BackLink(text: String, color: Color, onClick: () -> Unit) {
+    Text(
+        text,
+        color = color,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(vertical = 4.dp, horizontal = 2.dp)
+    )
+}
+
+@Composable
+fun SmallCourseCard(course: Course, doneCount: Int, onClick: () -> Unit) {
+    val edu = LocalEdu.current
+    val shape = RoundedCornerShape(24.dp)
+    val cols = courseColors(course.id, edu.dark)
+    val total = course.lessons.size
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(176.dp)
+            .scaleClick(onClick)
+            .clip(shape)
+            .background(Brush.linearGradient(cols))
+            .padding(16.dp)
+    ) {
+        Text(course.emoji, fontSize = 36.sp)
+        Spacer(Modifier.weight(1f))
+        Text(course.title, color = OnBrand, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(
+            doneCount.toString() + "/" + total + " dars",
+            color = OnBrand.copy(alpha = 0.9f),
+            fontSize = 13.sp
+        )
+        Spacer(Modifier.height(8.dp))
+        Bar(
+            if (total == 0) 0f else doneCount.toFloat() / total,
+            SolidColor(OnBrand),
+            OnBrand.copy(alpha = 0.28f),
+            5.dp
+        )
+    }
+}
+
+@Composable
+fun BigCourseCard(course: Course, doneCount: Int, onClick: () -> Unit) {
+    val edu = LocalEdu.current
+    val shape = RoundedCornerShape(28.dp)
+    val cols = courseColors(course.id, edu.dark)
+    val total = course.lessons.size
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .scaleClick(onClick)
+            .clip(shape)
+            .background(Brush.linearGradient(cols))
+            .padding(20.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(OnBrand.copy(alpha = 0.22f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(course.emoji, fontSize = 32.sp)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(course.title, color = OnBrand, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                Text(course.desc, color = OnBrand.copy(alpha = 0.9f), fontSize = 13.sp)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Bar(
+            if (total == 0) 0f else doneCount.toFloat() / total,
+            SolidColor(OnBrand),
+            OnBrand.copy(alpha = 0.28f),
+            8.dp
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Darslar: " + doneCount + "/" + total,
+            color = OnBrand,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+// ===================== ILOVA ILDIZI =====================
+
+@Composable
+fun EduApp(themeMode: Int, onTheme: (Int) -> Unit) {
+    val ctx = LocalContext.current
+    var contact by rememberSaveable { mutableStateOf(Store.session(ctx)) }
+    val valid = contact.isNotBlank() && Store.findUser(ctx, contact) != null
+    if (valid) {
+        MainShell(
+            contact = contact,
+            themeMode = themeMode,
+            onTheme = onTheme,
+            onLogout = {
+                Store.setSession(ctx, "")
+                contact = ""
+            }
+        )
+    } else {
+        AuthScreen(onAuth = { c ->
+            Store.setSession(ctx, c)
+            contact = c
+        })
+    }
+}
+
+// ===================== KIRISH / RO'YXATDAN O'TISH =====================
+
+@Composable
+fun AuthScreen(onAuth: (String) -> Unit) {
+    val ctx = LocalContext.current
+    val edu = LocalEdu.current
+    var register by rememberSaveable { mutableStateOf(false) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var contactIn by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var showPw by rememberSaveable { mutableStateOf(false) }
+    var nameErr by rememberSaveable { mutableStateOf("") }
+    var contactErr by rememberSaveable { mutableStateOf("") }
+    var pwErr by rememberSaveable { mutableStateOf("") }
+    var formErr by rememberSaveable { mutableStateOf("") }
+    var notFound by rememberSaveable { mutableStateOf(false) }
+    var busy by rememberSaveable { mutableStateOf(false) }
+
+    fun clearErrors() {
+        nameErr = ""
+        contactErr = ""
+        pwErr = ""
+        formErr = ""
+        notFound = false
+    }
+
+    fun validate(): Boolean {
+        clearErrors()
+        val c = normContact(contactIn)
+        var ok = true
+        if (register && name.trim().length < 2) {
+            nameErr = "Ism kamida 2 ta belgidan iborat bo'lsin."
+            ok = false
+        }
+        if (!validContact(c)) {
+            contactErr = "Elektron pochta yoki telefon noto'g'ri. Masalan: ali@mail.com yoki +998901234567"
+            ok = false
+        }
+        if (password.length < 6) {
+            pwErr = "Parol kamida 6 ta belgidan iborat bo'lsin."
+            ok = false
+        }
+        return ok
+    }
+
+    fun perform() {
+        val c = normContact(contactIn)
+        try {
+            if (register) {
+                if (Store.findUser(ctx, c) != null) {
+                    contactErr = "Bu hisob allaqachon mavjud. Kirish rejimiga o'ting."
+                } else if (Store.addUser(ctx, name.trim(), c, sha256(c + password))) {
+                    onAuth(c)
+                } else {
+                    formErr = "Saqlashda xatolik yuz berdi. Qayta urinib ko'ring."
+                }
+            } else {
+                val u = Store.findUser(ctx, c)
+                if (u == null) {
+                    notFound = true
+                    contactErr = "Bu hisob topilmadi."
+                } else if (u.optString("hash") != sha256(c + password)) {
+                    pwErr = "Parol noto'g'ri."
+                } else {
+                    onAuth(c)
+                }
+            }
+        } catch (e: Exception) {
+            formErr = "Kutilmagan xatolik yuz berdi. Qayta urinib ko'ring."
+        }
+    }
+
+    LaunchedEffect(busy) {
+        if (busy) {
+            delay(500)
+            perform()
+            busy = false
+        }
+    }
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Brand1,
+        unfocusedBorderColor = edu.line,
+        errorBorderColor = BadRed,
+        focusedLabelColor = Brand1,
+        unfocusedLabelColor = edu.textSub,
+        errorLabelColor = BadRed,
+        cursorColor = Brand1,
+        focusedTextColor = edu.text,
+        unfocusedTextColor = edu.text,
+        errorTextColor = edu.text
+    )
+    val fieldShape = RoundedCornerShape(16.dp)
+
+    Scaffold(
+        containerColor = edu.bg,
+        contentColor = edu.text,
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .padding(pad)
+                .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
+                    .background(Brush.linearGradient(BrandColors))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(top = 24.dp, bottom = 64.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .background(OnBrand.copy(alpha = 0.22f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🎓", fontSize = 46.sp)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "EduPlatform",
+                        color = OnBrand,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    )
+                    Text(
+                        "Abituriyentlar uchun ta'lim ilovasi",
+                        color = OnBrand.copy(alpha = 0.88f),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-36).dp)
+            ) {
+                EduCard {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(edu.surfaceHi)
+                            .padding(4.dp)
+                    ) {
+                        val tabShape = RoundedCornerShape(12.dp)
+                        listOf(false to "Kirish", true to "Ro'yxatdan o'tish").forEach { item ->
+                            val sel = register == item.first
+                            val tabBg = if (sel) {
+                                Modifier.background(Brush.horizontalGradient(BrandColors))
+                            } else {
+                                Modifier
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp)
+                                    .clip(tabShape)
+                                    .then(tabBg)
+                                    .clickable {
+                                        register = item.first
+                                        clearErrors()
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    item.second,
+                                    color = if (sel) OnBrand else edu.textSub,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Crossfade(targetState = register, label = "authTitle") { r ->
+                        Text(
+                            if (r) "Hisob yaratish" else "Xush kelibsiz!",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    AnimatedVisibility(visible = register) {
+                        Column {
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it; clearErrors() },
+                                label = { Text("Ism") },
+                                singleLine = true,
+                                isError = nameErr.isNotEmpty(),
+                                supportingText = {
+                                    if (nameErr.isNotEmpty()) Text("⚠️ " + nameErr, color = BadRed)
+                                },
+                                shape = fieldShape,
+                                colors = fieldColors,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(4.dp))
+                        }
+                    }
+                    OutlinedTextField(
+                        value = contactIn,
+                        onValueChange = { contactIn = it; clearErrors() },
+                        label = { Text("Elektron pochta yoki telefon") },
+                        singleLine = true,
+                        isError = contactErr.isNotEmpty(),
+                        supportingText = {
+                            if (contactErr.isNotEmpty()) Text("⚠️ " + contactErr, color = BadRed)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        shape = fieldShape,
+                        colors = fieldColors,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (notFound && !register) {
+                        OutlineButton(
+                            text = "Ro'yxatdan o'tish",
+                            onClick = {
+                                register = true
+                                clearErrors()
+                            }
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; clearErrors() },
+                        label = { Text("Parol") },
+                        singleLine = true,
+                        isError = pwErr.isNotEmpty(),
+                        supportingText = {
+                            if (pwErr.isNotEmpty()) Text("⚠️ " + pwErr, color = BadRed)
+                        },
+                        visualTransformation = if (showPw) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            TextButton(onClick = { showPw = !showPw }) {
+                                Text(
+                                    if (showPw) "Yashirish" else "Ko'rsatish",
+                                    fontSize = 12.sp,
+                                    color = Brand1
+                                )
+                            }
+                        },
+                        shape = fieldShape,
+                        colors = fieldColors,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (formErr.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text("⚠️ " + formErr, color = BadRed, fontSize = 14.sp)
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    GradButton(
+                        text = if (register) "Ro'yxatdan o'tish" else "Kirish",
+                        busy = busy,
+                        onClick = {
+                            if (!busy && validate()) {
+                                busy = true
+                            }
+                        }
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.navigationBarsPadding())
+            }
+        }
+    }
+}
+
+// ===================== ASOSIY QOBIQ (NAVIGATSIYA) =====================
+
+@Composable
+fun MainShell(contact: String, themeMode: Int, onTheme: (Int) -> Unit, onLogout: () -> Unit) {
+    val ctx = LocalContext.current
+    val edu = LocalEdu.current
+    var tab by rememberSaveable { mutableStateOf(0) }
+    var overlay by rememberSaveable { mutableStateOf("") }
+    var ver by remember { mutableStateOf(0) }
+
+    val done = remember(ver, contact) { Store.done(ctx, contact) }
+    val recent = remember(ver, contact) { Store.recent(ctx, contact) }
+    val results = remember(ver, contact) { Store.results(ctx, contact) }
+    val name = Store.findUser(ctx, contact)?.optString("name") ?: ""
+
+    val lessonPair = if (overlay.startsWith("lesson:")) findLesson(overlay.removePrefix("lesson:")) else null
+    val quizCourse = if (overlay.startsWith("quiz:")) findCourse(overlay.removePrefix("quiz:")) else null
+
+    BackHandler(enabled = overlay.isNotEmpty()) {
+        overlay = when {
+            lessonPair != null -> "course:" + lessonPair.first.id
+            quizCourse != null -> "course:" + quizCourse.id
+            else -> ""
+        }
+    }
+
+    val openCourse: (String) -> Unit = { id -> overlay = "course:" + id }
+    val openLesson: (String) -> Unit = { id ->
+        Store.setRecent(ctx, contact, "lesson", id)
+        overlay = "lesson:" + id
+        ver++
+    }
+    val openQuiz: (String) -> Unit = { id ->
+        Store.setRecent(ctx, contact, "quiz", id)
+        overlay = "quiz:" + id
+        ver++
+    }
+
+    val screenKey = if (overlay.isNotEmpty()) overlay else "tab" + tab
+
+    Scaffold(
+        containerColor = edu.bg,
+        contentColor = edu.text,
+        bottomBar = {
+            NavigationBar(containerColor = edu.surface, contentColor = edu.text, tonalElevation = 0.dp) {
+                listOf("Bosh sahifa" to "🏠", "Fanlar" to "📚", "Profil" to "👤").forEachIndexed { i, item ->
+                    NavigationBarItem(
+                        selected = tab == i,
+                        onClick = {
+                            tab = i
+                            overlay = ""
+                        },
+                        icon = { Text(item.second, fontSize = 22.sp) },
+                        label = { Text(item.first, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedTextColor = Brand1,
+                            unselectedTextColor = edu.textSub,
+                            indicatorColor = Brand1.copy(alpha = 0.18f)
+                        )
+                    )
+                }
+            }
+        }
+    ) { pad ->
+        Column(modifier = Modifier.padding(pad).fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "🎓 EduPlatform",
+                    color = Brand1,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp
+                )
+                Spacer(Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(edu.surfaceHi)
+                        .clickable { onTheme(if (edu.dark) 1 else 2) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(if (edu.dark) "☀️" else "🌙", fontSize = 20.sp)
+                }
+            }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Crossfade(targetState = screenKey, animationSpec = tween(250), label = "screen") { k ->
+                    val lp = if (k.startsWith("lesson:")) findLesson(k.removePrefix("lesson:")) else null
+                    val cp = if (k.startsWith("course:")) findCourse(k.removePrefix("course:")) else null
+                    val qc = if (k.startsWith("quiz:")) findCourse(k.removePrefix("quiz:")) else null
+                    when {
+                        lp != null -> LessonScreen(
+                            course = lp.first,
+                            lesson = lp.second,
+                            isDone = lp.second.id in done,
+                            onFinish = {
+                                Store.markDone(ctx, contact, lp.second.id)
+                                ver++
+                            },
+                            onNext = openLesson,
+                            onBack = { overlay = "course:" + lp.first.id }
+                        )
+                        cp != null -> CourseScreen(
+                            course = cp,
+                            done = done,
+                            results = results,
+                            onBack = { overlay = "" },
+                            onLesson = openLesson,
+                            onQuiz = openQuiz
+                        )
+                        qc != null -> QuizScreen(
+                            course = qc,
+                            onBack = { overlay = "course:" + qc.id },
+                            onFinish = { score, total ->
+                                Store.addResult(ctx, contact, qc.id, score, total)
+                                ver++
+                            }
+                        )
+                        k == "tab1" -> CoursesScreen(done = done, onCourse = openCourse)
+                        k == "tab2" -> ProfileScreen(
+                            name = name,
+                            contact = contact,
+                            done = done,
+                            results = results,
+                            themeMode = themeMode,
+                            onTheme = onTheme,
+                            onLogout = onLogout
+                        )
+                        else -> HomeScreen(
+                            name = name,
+                            done = done,
+                            recent = recent,
+                            onCourse = openCourse,
+                            onLesson = openLesson,
+                            onQuiz = openQuiz
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ===================== BOSH SAHIFA =====================
+
+// Qaytaradi: Triple(tur, id, sarlavha) yoki null
+fun continueTarget(recent: JSONObject?): Triple<String, String, String>? {
+    if (recent == null) return null
+    val type = recent.optString("type")
+    val id = recent.optString("id")
+    if (type == "lesson") {
+        val lp = findLesson(id)
+        if (lp != null) return Triple("lesson", id, "📖 " + lp.second.title)
+    } else if (type == "quiz") {
+        val c = findCourse(id)
+        if (c != null) return Triple("quiz", id, "📝 " + c.title + " — yakuniy test")
+    }
+    return null
+}
+
+@Composable
+fun HomeScreen(
+    name: String,
+    done: Set<String>,
+    recent: JSONObject?,
+    onCourse: (String) -> Unit,
+    onLesson: (String) -> Unit,
+    onQuiz: (String) -> Unit
+) {
+    val edu = LocalEdu.current
+    val total = ALL_LESSON_IDS.size
+    val doneCount = done.count { it in ALL_LESSON_IDS }
+    val frac = if (total == 0) 0f else doneCount.toFloat() / total
+    val pct = (frac * 100).toInt()
+    val target = continueTarget(recent)
+    val firstLesson = COURSES.firstOrNull()?.lessons?.firstOrNull()
+
+    Screen {
+        Appear(0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Brush.linearGradient(BrandColors))
+                    .padding(24.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Salom, " + name + "! 👋",
+                            color = OnBrand,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            lineHeight = 30.sp
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text("Bugun nima o'rganamiz?", color = OnBrand.copy(alpha = 0.92f), fontSize = 15.sp)
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            doneCount.toString() + "/" + total + " dars tugallangan",
+                            color = OnBrand.copy(alpha = 0.85f),
+                            fontSize = 13.sp
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    ProgressRing(
+                        progress = frac,
+                        diameter = 96.dp,
+                        stroke = 10.dp,
+                        track = OnBrand.copy(alpha = 0.25f),
+                        colors = listOf(OnBrand, OnBrand),
+                        label = pct.toString() + "%",
+                        labelColor = OnBrand
+                    )
+                }
+            }
+        }
+
+        Appear(100) {
+            if (target != null) {
+                EduCard {
+                    Text("So'nggi faollik", color = edu.textSub, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(6.dp))
+                    Text(target.third, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp)
+                    Text(fmt(recent?.optLong("ts") ?: 0L), color = edu.textSub, fontSize = 13.sp)
+                    Spacer(Modifier.height(14.dp))
+                    GradButton(
+                        text = "Davom ettirish",
+                        onClick = {
+                            if (target.first == "lesson") onLesson(target.second) else onQuiz(target.second)
+                        }
+                    )
+                }
+            } else if (firstLesson != null) {
+                EduCard {
+                    Text("Boshlash", color = edu.textSub, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("📖 " + firstLesson.title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(14.dp))
+                    GradButton(text = "Birinchi darsni ochish", onClick = { onLesson(firstLesson.id) })
+                }
+            }
+        }
+
+        Text("Fanlar", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        COURSES.chunked(2).forEachIndexed { r, pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                pair.forEachIndexed { i, c ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        Appear((r * 2 + i) * 80 + 150) {
+                            SmallCourseCard(c, courseDone(c, done)) { onCourse(c.id) }
+                        }
+                    }
+                }
+                if (pair.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+// ===================== FANLAR =====================
+
+@Composable
+fun CoursesScreen(done: Set<String>, onCourse: (String) -> Unit) {
+    Screen {
+        Text("Fanlar", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
+        COURSES.forEachIndexed { i, c ->
+            Appear(i * 80) {
+                BigCourseCard(c, courseDone(c, done)) { onCourse(c.id) }
+            }
+        }
+    }
+}
+
+// ===================== FAN SAHIFASI =====================
+
+@Composable
+fun CourseScreen(
+    course: Course,
+    done: Set<String>,
+    results: List<JSONObject>,
+    onBack: () -> Unit,
+    onLesson: (String) -> Unit,
+    onQuiz: (String) -> Unit
+) {
+    val edu = LocalEdu.current
+    val cols = courseColors(course.id, edu.dark)
+    val doneCount = courseDone(course, done)
+    val total = course.lessons.size
+    val frac = if (total == 0) 0f else doneCount.toFloat() / total
+    val best = results.filter { it.optString("c") == course.id }.maxOfOrNull { percentOf(it) }
+    val firstUndone = course.lessons.indexOfFirst { it.id !in done }
+    val lastIndex = course.lessons.size - 1
+
+    Screen {
+        Appear(0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Brush.linearGradient(cols))
+                    .padding(20.dp)
+            ) {
+                Column {
+                    BackLink("← Fanlar", OnBrand, onBack)
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(course.emoji, fontSize = 44.sp)
+                            Text(
+                                course.title,
+                                color = OnBrand,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                course.desc,
+                                color = OnBrand.copy(alpha = 0.92f),
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        ProgressRing(
+                            progress = frac,
+                            diameter = 84.dp,
+                            stroke = 9.dp,
+                            track = OnBrand.copy(alpha = 0.25f),
+                            colors = listOf(OnBrand, OnBrand),
+                            label = (frac * 100).toInt().toString() + "%",
+                            labelColor = OnBrand,
+                            labelSize = 18
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "Darslar: " + doneCount + "/" + total,
+                        color = OnBrand,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        Text("Mavzular", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+
+        Column {
+            course.lessons.forEachIndexed { i, l ->
+                val isDone = l.id in done
+                val isCurrent = !isDone && i == firstUndone
+                Appear(minOf(i, 8) * 50) {
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                        Column(
+                            modifier = Modifier.width(44.dp).fillMaxHeight(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val circleMod = if (isDone) {
+                                Modifier.background(Brush.linearGradient(cols))
+                            } else if (isCurrent) {
+                                Modifier.background(edu.surface).border(2.5.dp, cols[0], CircleShape)
+                            } else {
+                                Modifier.background(edu.surfaceHi)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .then(circleMod),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    if (isDone) "✓" else (i + 1).toString(),
+                                    color = if (isDone) OnBrand else if (isCurrent) cols[0] else edu.textSub,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
+                            if (i < lastIndex) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .weight(1f)
+                                        .background(if (isDone) cols[0] else edu.line)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Box(modifier = Modifier.weight(1f).padding(bottom = 12.dp)) {
+                            EduCard(onClick = { onLesson(l.id) }, pad = 16.dp) {
+                                Text(l.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                                if (isCurrent) {
+                                    Text(
+                                        "Joriy mavzu",
+                                        color = cols[0],
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        EduCard {
+            Text("🏁 Yakuniy test", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Savollar soni: " + course.questions.size,
+                color = edu.textSub,
+                fontSize = 13.sp
+            )
+            Text(
+                if (best == null) "Eng yaxshi natija: hali yo'q" else "Eng yaxshi natija: " + best + "%",
+                color = edu.textSub,
+                fontSize = 13.sp
+            )
+            Spacer(Modifier.height(14.dp))
+            GradButton(
+                text = "Testni boshlash",
+                colors = cols,
+                enabled = course.questions.isNotEmpty(),
+                onClick = { onQuiz(course.id) }
+            )
+        }
+    }
+}
+
+// ===================== DARS SAHIFASI =====================
+
+@Composable
+fun DoneButton(isDone: Boolean, onClick: () -> Unit) {
+    val bg by animateColorAsState(if (isDone) OkGreen else Brand1, animationSpec = tween(400), label = "doneBg")
+    val sc by animateFloatAsState(
+        if (isDone) 1f else 0.97f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "doneScale"
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .graphicsLayer {
+                scaleX = sc
+                scaleY = sc
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .background(bg)
+            .clickable(enabled = !isDone) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            if (isDone) "✓ Tugallangan" else "Darsni tugatdim ✓",
+            color = OnBrand,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+    }
+}
+
+@Composable
+fun LessonScreen(
+    course: Course,
+    lesson: Lesson,
+    isDone: Boolean,
+    onFinish: () -> Unit,
+    onNext: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val ctx = LocalContext.current
+    val edu = LocalEdu.current
+    val cols = courseColors(course.id, edu.dark)
+    val idx = course.lessons.indexOfFirst { it.id == lesson.id }
+    val next = if (idx >= 0) course.lessons.getOrNull(idx + 1) else null
+    val link = (VIDEO_LINKS[lesson.id] ?: "").trim()
+
+    key(lesson.id) {
+        var videoErr by remember { mutableStateOf(false) }
+        Screen {
+            Appear(0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(Brush.linearGradient(cols))
+                        .padding(20.dp)
+                ) {
+                    Column {
+                        BackLink("← " + course.title, OnBrand, onBack)
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(90.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(course.emoji, fontSize = 64.sp)
+                        }
+                    }
+                }
+            }
+            Text(
+                lesson.title,
+                fontSize = 28.sp,
+                lineHeight = 34.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(lesson.text, fontSize = 16.sp, lineHeight = 26.sp)
+            if (lesson.example.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(if (edu.dark) edu.surfaceHi else Color(0xFF111827))
+                        .padding(18.dp)
+                ) {
+                    Text(
+                        lesson.example,
+                        color = CodeText,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 14.sp,
+                        lineHeight = 22.sp
+                    )
+                }
+            }
+
+            GradButton(
+                text = "▶ Videoni ko'rish",
+                colors = cols,
+                enabled = link.isNotEmpty(),
+                onClick = {
+                    try {
+                        val url = if (link.startsWith("http")) link else "https://" + link
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        ctx.startActivity(intent)
+                        videoErr = false
+                    } catch (e: Exception) {
+                        videoErr = true
+                    }
+                }
+            )
+            if (link.isEmpty()) {
+                Text("Video tez orada qo'shiladi", color = edu.textSub, fontSize = 13.sp)
+            }
+            if (videoErr) {
+                Text("⚠️ Havolani ochib bo'lmadi", color = BadRed, fontSize = 14.sp)
+            }
+
+            DoneButton(isDone = isDone, onClick = onFinish)
+            if (next != null) {
+                OutlineButton(text = "Keyingi dars →", onClick = { onNext(next.id) })
+            }
+            OutlineButton(text = "Kursga qaytish", onClick = onBack, color = edu.textSub)
+        }
+    }
+}
+
+// ===================== TEST EKRANI =====================
+
+@Composable
+fun Seg(active: Boolean, color: Color, track: Color, modifier: Modifier) {
+    val c by animateColorAsState(if (active) color else track, animationSpec = tween(250), label = "seg")
+    Box(modifier = modifier.height(6.dp).clip(RoundedCornerShape(3.dp)).background(c))
+}
+
+@Composable
+fun OptionCard(letter: String, text: String, selected: Boolean, accent: Color, onClick: () -> Unit) {
+    val edu = LocalEdu.current
+    val shape = RoundedCornerShape(20.dp)
+    val bg by animateColorAsState(
+        if (selected) accent.copy(alpha = 0.14f) else edu.surface,
+        animationSpec = tween(200),
+        label = "optBg"
+    )
+    val bc by animateColorAsState(
+        if (selected) accent else edu.line,
+        animationSpec = tween(200),
+        label = "optBorder"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(bg)
+            .border(if (selected) 2.dp else 1.dp, bc, shape)
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(if (selected) accent else edu.surfaceHi),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                letter,
+                color = if (selected) OnBrand else edu.textSub,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Text(text, fontSize = 16.sp, lineHeight = 22.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun QuizScreen(course: Course, onBack: () -> Unit, onFinish: (Int, Int) -> Unit) {
+    val edu = LocalEdu.current
+    val cols = courseColors(course.id, edu.dark)
+    val qs = course.questions
+    val n = qs.size
+    var index by rememberSaveable { mutableStateOf(0) }
+    var answers by rememberSaveable { mutableStateOf(IntArray(n) { -1 }) }
+    var finished by rememberSaveable { mutableStateOf(false) }
+    var warning by rememberSaveable { mutableStateOf("") }
+
+    if (n == 0 || answers.size != n) {
+        Screen {
+            BackLink("← Kursga qaytish", Brand1, onBack)
+            Text("Bu fan uchun test hozircha mavjud emas.")
+        }
+        return
+    }
+
+    val idx = index.coerceIn(0, n - 1)
+
+    if (finished) {
+        val score = qs.indices.count { answers[it] == qs[it].correct }
+        val frac = score.toFloat() / n
+        val pct = score * 100 / n
+        Screen {
+            Appear(0) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(course.title + " — natija", color = edu.textSub, fontSize = 14.sp)
+                    Spacer(Modifier.height(12.dp))
+                    ProgressRing(
+                        progress = frac,
+                        diameter = 160.dp,
+                        stroke = 16.dp,
+                        track = edu.line,
+                        colors = cols,
+                        label = score.toString() + "/" + n,
+                        labelColor = edu.text,
+                        labelSize = 32
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text("Foiz: " + pct + "%", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (pct >= 60) "🎉 Ajoyib!" else "💪 Yana urinib ko'ring — albatta uddalaysiz!",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Text("Savollar tahlili", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            qs.forEachIndexed { i, qu ->
+                val a = answers[i]
+                val ok = a == qu.correct
+                val mark = if (ok) OkGreen else BadRed
+                EduCard(pad = 0.dp) {
+                    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                        Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(mark))
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                (i + 1).toString() + ". " + qu.text,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                lineHeight = 22.sp
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                (if (ok) "✓ To'g'ri: " else "✗ Noto'g'ri: ") + (qu.options.getOrNull(a) ?: "—"),
+                                color = mark,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (!ok) {
+                                Text(
+                                    "To'g'ri javob: " + (qu.options.getOrNull(qu.correct) ?: ""),
+                                    color = OkGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(qu.explanation, color = edu.textSub, fontSize = 13.sp, lineHeight = 19.sp)
+                        }
+                    }
+                }
+            }
+            GradButton(
+                text = "Qayta urinish",
+                colors = cols,
+                onClick = {
+                    answers = IntArray(n) { -1 }
+                    index = 0
+                    warning = ""
+                    finished = false
+                }
+            )
+            OutlineButton(text = "Kursga qaytish", onClick = onBack, color = edu.textSub)
+        }
+    } else {
+        val qu = qs[idx]
+        val letters = listOf("A", "B", "C", "D", "E", "F")
+        Screen {
+            BackLink("← Kursga qaytish", Brand1, onBack)
+            Text(
+                "Savol " + (idx + 1) + " / " + n,
+                color = edu.textSub,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (i in 0 until n) {
+                    Seg(active = i <= idx, color = cols[0], track = edu.line, modifier = Modifier.weight(1f))
+                }
+            }
+            Text(qu.text, fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold)
+            qu.options.forEachIndexed { i, opt ->
+                OptionCard(
+                    letter = letters.getOrElse(i) { "•" },
+                    text = opt,
+                    selected = answers[idx] == i,
+                    accent = cols[0],
+                    onClick = {
+                        val copy = answers.copyOf()
+                        copy[idx] = i
+                        answers = copy
+                        warning = ""
+                    }
+                )
+            }
+            if (warning.isNotEmpty()) {
+                Text("⚠️ " + warning, color = BadRed, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (idx > 0) {
+                    OutlineButton(
+                        text = "Oldingi",
+                        color = edu.textSub,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            warning = ""
+                            index = (idx - 1).coerceAtLeast(0)
+                        }
+                    )
+                }
+                if (idx < n - 1) {
+                    GradButton(
+                        text = "Keyingi",
+                        colors = cols,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            if (answers[idx] < 0) {
+                                warning = "Iltimos, avval javobni tanlang."
+                            } else {
+                                warning = ""
+                                index = idx + 1
+                            }
+                        }
+                    )
+                } else {
+                    GradButton(
+                        text = "Yakunlash",
+                        colors = cols,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            val unanswered = answers.count { it < 0 }
+                            if (answers[idx] < 0) {
+                                warning = "Iltimos, avval javobni tanlang."
+                            } else if (unanswered > 0) {
+                                warning = "Yana " + unanswered + " ta savolga javob berilmagan."
+                            } else {
+                                val score = qs.indices.count { answers[it] == qs[it].correct }
+                                warning = ""
+                                finished = true
+                                onFinish(score, n)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ===================== PROFIL =====================
+
+@Composable
+fun StatCard(value: String, label: String, modifier: Modifier) {
+    val edu = LocalEdu.current
+    EduCard(modifier = modifier, pad = 14.dp) {
+        Text(value, color = Brand1, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text(label, color = edu.textSub, fontSize = 12.sp)
+    }
+}
+
+@Composable
+fun ProfileScreen(
+    name: String,
+    contact: String,
+    done: Set<String>,
+    results: List<JSONObject>,
+    themeMode: Int,
+    onTheme: (Int) -> Unit,
+    onLogout: () -> Unit
+) {
+    val edu = LocalEdu.current
+    val doneCount = done.count { it in ALL_LESSON_IDS }
+    val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+    val history = results.reversed()
+    val avg = if (results.isEmpty()) -1 else results.sumOf { percentOf(it) } / results.size
+
+    Screen {
+        Appear(0) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(92.dp)
+                        .clip(CircleShape)
+                        .background(Brush.linearGradient(BrandColors)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(initial, fontSize = 42.sp, color = OnBrand, fontWeight = FontWeight.ExtraBold)
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                Text(contact, color = edu.textSub, fontSize = 14.sp)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard(doneCount.toString(), "O'tilgan darslar", Modifier.weight(1f))
+            StatCard(results.size.toString(), "Testlar", Modifier.weight(1f))
+            StatCard(if (avg < 0) "—" else avg.toString() + "%", "O'rtacha ball", Modifier.weight(1f))
+        }
+        EduCard {
+            Text("Fanlar bo'yicha progress", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            for (c in COURSES) {
+                val d = courseDone(c, done)
+                val cols = courseColors(c.id, edu.dark)
+                Spacer(Modifier.height(14.dp))
+                Text(c.emoji + " " + c.title + " — " + d + "/" + c.lessons.size, fontSize = 14.sp)
+                Spacer(Modifier.height(6.dp))
+                Bar(
+                    if (c.lessons.isEmpty()) 0f else d.toFloat() / c.lessons.size,
+                    Brush.horizontalGradient(cols),
+                    edu.surfaceHi
+                )
+            }
+        }
+        EduCard {
+            Text("Ko'rinish", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(edu.surfaceHi)
+                    .padding(4.dp)
+            ) {
+                listOf(1 to "☀️ Kun", 2 to "🌙 Tun", 0 to "🌓 Avto").forEach { item ->
+                    val sel = themeMode == item.first
+                    val selBg = if (sel) {
+                        Modifier.background(Brush.horizontalGradient(BrandColors))
+                    } else {
+                        Modifier
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(42.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .then(selBg)
+                            .clickable { onTheme(item.first) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            item.second,
+                            color = if (sel) OnBrand else edu.textSub,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        }
+        EduCard {
+            Text("Test natijalari", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            if (history.isEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text("Hali test topshirilmagan.", color = edu.textSub, fontSize = 13.sp)
+            }
+            for (r in history) {
+                val c = findCourse(r.optString("c"))
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    (c?.title ?: "Test") + ": " + r.optInt("s") + "/" + r.optInt("t") + " (" + percentOf(r) + "%)",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(fmt(r.optLong("ts")), color = edu.textSub, fontSize = 12.sp)
+            }
+        }
+        OutlineButton(text = "Hisobdan chiqish", onClick = onLogout, color = BadRed)
+    }
+}

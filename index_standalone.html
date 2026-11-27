@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UzumShop — O'zbekiston #1 Online Do'koni</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            uzum: { 50:'#fff1f2', 100:'#ffe4e6', 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48', 700:'#be123c', 800:'#9f1239' },
+            brand: { 400:'#f97316', 500:'#ea580c', 600:'#c2410c' }
+          }
+        }
+      }
+    }
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #e11d48; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #be123c; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .line-clamp-1 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+    .line-clamp-2 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes fadeUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .fade-up { animation: fadeUp 0.3s ease-out; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+    .product-card { transition: all 0.25s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 antialiased min-h-screen text-gray-900 dark:text-gray-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+    // ═══════════════════════════════════════════════════════
+    // DATA — 60+ MAHSULOT
+    // ═══════════════════════════════════════════════════════
+    const ALL_PRODUCTS = [
+      // 📱 SMARTFONLAR
+      { id:'s1', name:'Samsung Galaxy S24 Ultra 512GB', cat:'phones', brand:'Samsung', price:12990000, oldPrice:15500000, unit:'dona', stock:15, rating:4.9, reviews:1842, badge:'🔥 Bestseller', badgeColor:'red', img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=500&q=80', desc:'200MP kamera, Snapdragon 8 Gen 3, 5000mAh batareya. Titanium korpus.' },
+      { id:'s2', name:'iPhone 16 Pro Max 256GB', cat:'phones', brand:'Apple', price:19900000, oldPrice:22000000, unit:'dona', stock:8, rating:4.9, reviews:3241, badge:'🍎 Apple', badgeColor:'gray', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=500&q=80', desc:'A18 Pro chip, 48MP kamera tizimi, Titanium dizayn, USB-C.' },
+      { id:'s3', name:'Xiaomi 14T Pro 512GB', cat:'phones', brand:'Xiaomi', price:7490000, oldPrice:8900000, unit:'dona', stock:22, rating:4.7, reviews:956, badge:'💰 Arzon', badgeColor:'green', img:'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=500&q=80', desc:'Leica kamera, Snapdragon 8s Gen 3, 144Hz AMOLED ekran.' },
+      { id:'s4', name:'Samsung Galaxy A55 128GB', cat:'phones', brand:'Samsung', price:3990000, oldPrice:4500000, unit:'dona', stock:35, rating:4.6, reviews:712, badge:'⭐ Top Tanlov', badgeColor:'yellow', img:'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=500&q=80', desc:'50MP kamera, 5000mAh, IP67 suv o\'tkazmaslik.' },
+      { id:'s5', name:'iPhone 15 128GB Black', cat:'phones', brand:'Apple', price:10490000, oldPrice:12000000, unit:'dona', stock:14, rating:4.9, reviews:1890, badge:'🍎 Apple', badgeColor:'gray', img:'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=500&q=80', desc:'Dynamic Island, 48MP asosiy kamera, A16 Bionic chip.' },
+      { id:'s6', name:'Xiaomi Redmi Note 13 Pro 8/256GB', cat:'phones', brand:'Xiaomi', price:3190000, oldPrice:3800000, unit:'dona', stock:40, rating:4.8, reviews:1450, badge:'🔥 Xit Savdo', badgeColor:'red', img:'https://images.unsplash.com/photo-1567581935884-3349723552ca?auto=format&fit=crop&w=500&q=80', desc:'200MP OIS kamera, 120Hz AMOLED displey, 67W tez quvvatlash.' },
+      { id:'s7', name:'Xiaomi Redmi 13C 6/128GB', cat:'phones', brand:'Xiaomi', price:1490000, oldPrice:1750000, unit:'dona', stock:60, rating:4.6, reviews:890, badge:'💚 Budjet', badgeColor:'green', img:'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=500&q=80', desc:'50MP AI kamera, 5000mAh uzoq yetuvchi batareya, 6.74" 90Hz ekran.' },
+      { id:'s8', name:'Honor 90 12/512GB', cat:'phones', brand:'Honor', price:4690000, oldPrice:5300000, unit:'dona', stock:25, rating:4.7, reviews:640, badge:'✨ 200MP', badgeColor:'purple', img:'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?auto=format&fit=crop&w=500&q=80', desc:'200MP ultra-aniq kamera, 3840Hz xavfsiz ekran, Snapdragon 7 Gen 1.' },
+      { id:'s9', name:'Poco X6 Pro 5G 12/512GB', cat:'phones', brand:'Poco', price:4290000, oldPrice:4800000, unit:'dona', stock:30, rating:4.8, reviews:920, badge:'🎮 Gaming Tel', badgeColor:'yellow', img:'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=500&q=80', desc:'Dimensity 8300-Ultra, CrystalRes 120Hz Flow AMOLED, 64MP OIS.' },
+      { id:'s10', name:'Realme C55 6/128GB Sunshower', cat:'phones', brand:'Realme', price:1890000, oldPrice:2200000, unit:'dona', stock:45, rating:4.5, reviews:510, badge:'💰 Tejamkor', badgeColor:'green', img:'https://images.unsplash.com/photo-1533228100845-08145b01de14?auto=format&fit=crop&w=500&q=80', desc:'64MP kamera, 33W SUPERVOOC zaryad, Mini Capsule xabarnoma.' },
+      { id:'s11', name:'Google Pixel 8 128GB Hazel', cat:'phones', brand:'Google', price:8290000, oldPrice:9500000, unit:'dona', stock:12, rating:4.9, reviews:480, badge:'🤖 Google AI', badgeColor:'blue', img:'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=500&q=80', desc:'Google Tensor G3 chip, Best Take AI kamera, sof Android.' },
+      { id:'s12', name:'Samsung Galaxy S23 FE 8/256GB', cat:'phones', brand:'Samsung', price:6290000, oldPrice:7100000, unit:'dona', stock:20, rating:4.7, reviews:730, badge:'⭐ Flagman', badgeColor:'orange', img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=500&q=80', desc:'Dynamic AMOLED 2X, Nightography kamera, IP68 himoya.' },
+
+      // 💻 NOUTBUKLAR
+      { id:'n1', name:'MacBook Pro 14" M4 Pro', cat:'laptops', brand:'Apple', price:24900000, oldPrice:28000000, unit:'dona', stock:6, rating:5.0, reviews:528, badge:'🏆 Pro', badgeColor:'purple', img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=500&q=80', desc:'M4 Pro chip, 18GB RAM, 512GB SSD, Liquid Retina XDR.' },
+      { id:'n2', name:'ASUS ROG Strix G16 RTX 4070', cat:'laptops', brand:'ASUS', price:16500000, oldPrice:19000000, unit:'dona', stock:10, rating:4.8, reviews:341, badge:'🎮 Gaming', badgeColor:'green', img:'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=500&q=80', desc:'Intel i9-14900H, RTX 4070, 32GB DDR5, 1TB SSD, 240Hz.' },
+      { id:'n3', name:'Lenovo ThinkPad X1 Carbon', cat:'laptops', brand:'Lenovo', price:11900000, oldPrice:14000000, unit:'dona', stock:12, rating:4.7, reviews:289, badge:'💼 Biznes', badgeColor:'blue', img:'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=500&q=80', desc:'Intel Core Ultra 7, 32GB, 1TB SSD. Yengil va chidamli.' },
+      { id:'n4', name:'HP Pavilion 15 Ryzen 5', cat:'laptops', brand:'HP', price:6490000, oldPrice:7500000, unit:'dona', stock:28, rating:4.5, reviews:445, badge:'💰 Tejamkor', badgeColor:'green', img:'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=500&q=80', desc:'AMD Ryzen 5 7530U, 16GB RAM, 512GB SSD, Windows 11.' },
+
+      // 🎧 QULOQCHINLAR
+      { id:'e1', name:'AirPods Pro 3 (USB-C)', cat:'audio', brand:'Apple', price:2990000, oldPrice:3500000, unit:'dona', stock:40, rating:4.9, reviews:2156, badge:'🍎 Apple', badgeColor:'gray', img:'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=500&q=80', desc:'Adaptive Audio, ANC, Transparency mode, 30 soat batareya.' },
+      { id:'e2', name:'Sony WH-1000XM5 Wireless', cat:'audio', brand:'Sony', price:2490000, oldPrice:3200000, unit:'dona', stock:18, rating:4.8, reviews:1023, badge:'🔇 ANC', badgeColor:'blue', img:'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=500&q=80', desc:'Dunyodagi eng yaxshi ANC, 30 soat, Hi-Res Audio.' },
+      { id:'e3', name:'JBL Charge 5 Bluetooth Speaker', cat:'audio', brand:'JBL', price:1290000, oldPrice:1600000, unit:'dona', stock:25, rating:4.7, reviews:678, badge:'💧 IP67', badgeColor:'cyan', img:'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=500&q=80', desc:'360° sound, 20 soat, suv o\'tkazmas, PowerBank funksiyasi.' },
+      { id:'e4', name:'Samsung Galaxy Buds3 Pro', cat:'audio', brand:'Samsung', price:1490000, oldPrice:1800000, unit:'dona', stock:30, rating:4.6, reviews:489, badge:'⭐ Yangi', badgeColor:'yellow', img:'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80', desc:'360 Audio, ANC, Galaxy AI translation, 36 soat batareya.' },
+
+      // ⌚ SOATLAR
+      { id:'w1', name:'Apple Watch Ultra 2 (49mm)', cat:'watches', brand:'Apple', price:5990000, oldPrice:7200000, unit:'dona', stock:9, rating:4.9, reviews:734, badge:'🏔️ Ultra', badgeColor:'orange', img:'https://images.unsplash.com/photo-1551816230-ef5deaed4a26?auto=format&fit=crop&w=500&q=80', desc:'Titanium, GPS+Cellular, 36 soat batareya, Dive kompyuteri.' },
+      { id:'w2', name:'Samsung Galaxy Watch 7 44mm', cat:'watches', brand:'Samsung', price:1990000, oldPrice:2500000, unit:'dona', stock:20, rating:4.7, reviews:542, badge:'💚 Sog\'liq', badgeColor:'green', img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80', desc:'BioActive sensor, BPM, SpO2, stres monitoring, 40 soat.' },
+      { id:'w3', name:'Xiaomi Watch S3 (Amoled)', cat:'watches', brand:'Xiaomi', price:890000, oldPrice:1200000, unit:'dona', stock:35, rating:4.5, reviews:321, badge:'💰 Arzon', badgeColor:'green', img:'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=500&q=80', desc:'AMOLED ekran, 15 kun batareya, GPS, 100+ sport rejimi.' },
+
+      // 👕 ERKAKLAR KIYIMI
+      { id:'k1', name:'Nike Air Force 1 \'07 (42-eu)', cat:'mens', brand:'Nike', price:1490000, oldPrice:1800000, unit:'juft', stock:20, rating:4.9, reviews:3421, badge:'👟 Classic', badgeColor:'gray', img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80', desc:'Iconic teri yuza, Air-Sole yostiq, oq rangda.' },
+      { id:'k2', name:'Adidas Ultraboost 24 Running', cat:'mens', brand:'Adidas', price:1890000, oldPrice:2200000, unit:'juft', stock:15, rating:4.8, reviews:1234, badge:'🏃 Sport', badgeColor:'blue', img:'https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=500&q=80', desc:'Primeknit+, BOOST midsole, Continental rubber. Yugurish uchun.' },
+      { id:'k3', name:'Levi\'s 501 Original Jeans', cat:'mens', brand:"Levi's", price:890000, oldPrice:1100000, unit:'dona', stock:40, rating:4.7, reviews:2100, badge:'👖 Original', badgeColor:'blue', img:'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=500&q=80', desc:'100% paxta, klassik kesim, 5 cho\'ntak dizayn.' },
+      { id:'k4', name:'Polo Ralph Lauren Ko\'ylak (M)', cat:'mens', brand:'Ralph Lauren', price:590000, oldPrice:750000, unit:'dona', stock:50, rating:4.6, reviews:876, badge:'🎽 Premium', badgeColor:'purple', img:'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=80', desc:'100% paxta, klassik Polo logo, 15 rangli.' },
+
+      // 👗 AYOLLAR KIYIMI
+      { id:'a1', name:'Zara Floral Maxi Dress', cat:'womens', brand:'Zara', price:490000, oldPrice:699000, unit:'dona', stock:30, rating:4.7, reviews:654, badge:'🌸 Trend', badgeColor:'pink', img:'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=500&q=80', desc:'Gul naqshli, uzun, yengil material. Yozgi kolleksiya.' },
+      { id:'a2', name:'H&M Slim Fit Blazer (S-XL)', cat:'womens', brand:'H&M', price:390000, oldPrice:520000, unit:'dona', stock:25, rating:4.5, reviews:432, badge:'💼 Office', badgeColor:'gray', img:'https://images.unsplash.com/photo-1594938298603-c8148c4b5c5b?auto=format&fit=crop&w=500&q=80', desc:'Stretch material, 2 tugmalik, ofis va kundalik uchun.' },
+      { id:'a3', name:'Nike Air Max 270 Women (38)', cat:'womens', brand:'Nike', price:1290000, oldPrice:1600000, unit:'juft', stock:18, rating:4.8, reviews:987, badge:'👟 Air', badgeColor:'orange', img:'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=500&q=80', desc:'270-unit Air yostiq, to\'r material, engil va qulay.' },
+      { id:'a4', name:'Coach Leather Handbag (Brown)', cat:'womens', brand:'Coach', price:2990000, oldPrice:3800000, unit:'dona', stock:8, rating:4.9, reviews:321, badge:'👜 Luxury', badgeColor:'yellow', img:'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=500&q=80', desc:'Haqiqiy teri, oltin aksessuarlar, keng sig\'imli.' },
+
+      // 📺 ELEKTRONIKA
+      { id:'tv1', name:'Samsung QLED 65" 4K Smart TV', cat:'tv', brand:'Samsung', price:9990000, oldPrice:12500000, unit:'dona', stock:7, rating:4.8, reviews:567, badge:'🖥️ QLED', badgeColor:'blue', img:'https://images.unsplash.com/photo-1593784991095-a205069470b6?auto=format&fit=crop&w=500&q=80', desc:'Neo QLED, 120Hz, Dolby Atmos, Gaming Hub, Tizen OS.' },
+      { id:'tv2', name:'LG OLED evo 55" C4 Series', cat:'tv', brand:'LG', price:11900000, oldPrice:14000000, unit:'dona', stock:5, rating:4.9, reviews:412, badge:'🏆 OLED', badgeColor:'red', img:'https://images.unsplash.com/photo-1567690187548-f07b1d7bf5a9?auto=format&fit=crop&w=500&q=80', desc:'Perfect Black, α9 AI, 4K 120Hz, Dolby Vision IQ.' },
+      { id:'tv3', name:'Xiaomi Smart TV A Pro 43"', cat:'tv', brand:'Xiaomi', price:2990000, oldPrice:3800000, unit:'dona', stock:15, rating:4.5, reviews:823, badge:'💰 Tejamkor', badgeColor:'green', img:'https://images.unsplash.com/photo-1461151304267-38535e780c79?auto=format&fit=crop&w=500&q=80', desc:'4K, Android TV 11, Dolby Audio, metalik çerçeve.' },
+
+      // 🏠 UY TEXNIKASI
+      { id:'h1', name:'Dyson V15 Detect Vacuum', cat:'home', brand:'Dyson', price:5490000, oldPrice:6500000, unit:'dona', stock:10, rating:4.9, reviews:734, badge:'🌀 Dyson', badgeColor:'purple', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=500&q=80', desc:'Lazer tozu ko\'rish, 60 daqiqa, HEPA filtrlash, LCD ekran.' },
+      { id:'h2', name:'Philips Air Fryer XXL 7.3L', cat:'home', brand:'Philips', price:1890000, oldPrice:2400000, unit:'dona', stock:22, rating:4.8, reviews:1456, badge:'🍗 AirFry', badgeColor:'orange', img:'https://images.unsplash.com/photo-1626509653291-18d9a934b9db?auto=format&fit=crop&w=500&q=80', desc:'7.3L hajm, Smart Sensing texnologiya, 97% kam yog\'.' },
+      { id:'h3', name:'Nespresso Vertuo Next Qahva', cat:'home', brand:'Nespresso', price:1490000, oldPrice:1900000, unit:'dona', stock:18, rating:4.7, reviews:892, badge:'☕ Coffee', badgeColor:'brown', img:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=500&q=80', desc:'Centrifusion texnologiya, 5 format, WiFi, 25-sek qizishi.' },
+      { id:'h4', name:'LG Side-by-Side Muzlatgich', cat:'home', brand:'LG', price:8900000, oldPrice:11000000, unit:'dona', stock:6, rating:4.7, reviews:234, badge:'❄️ InstaView', badgeColor:'cyan', img:'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?auto=format&fit=crop&w=500&q=80', desc:'InstaView Door-in-Door, 617L, Linear Inverter kompressor.' },
+
+      // 🎮 GAMING
+      { id:'g1', name:'PlayStation 5 Slim + 2 Controller', cat:'gaming', brand:'Sony', price:7990000, oldPrice:9500000, unit:'dona', stock:5, rating:4.9, reviews:2341, badge:'🎮 PS5', badgeColor:'blue', img:'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=500&q=80', desc:'825GB SSD, 4K 120fps, Ray Tracing, DualSense haptic.' },
+      { id:'g2', name:'Xbox Series X 1TB', cat:'gaming', brand:'Microsoft', price:6990000, oldPrice:8200000, unit:'dona', stock:8, rating:4.8, reviews:1234, badge:'🟢 Xbox', badgeColor:'green', img:'https://images.unsplash.com/photo-1621259182978-fbf93132d53d?auto=format&fit=crop&w=500&q=80', desc:'12 teraflop, 4K 120fps, Smart Delivery, Game Pass.' },
+      { id:'g3', name:'Razer DeathAdder V3 Mouse', cat:'gaming', brand:'Razer', price:490000, oldPrice:650000, unit:'dona', stock:30, rating:4.7, reviews:678, badge:'🖱️ Gaming', badgeColor:'green', img:'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=500&q=80', desc:'Focus Pro 30K DPI, 90 soat batareya, Razer HyperSpeed.' },
+      { id:'g4', name:'Logitech G Pro X Keyboard', cat:'gaming', brand:'Logitech', price:890000, oldPrice:1100000, unit:'dona', stock:20, rating:4.6, reviews:445, badge:'⌨️ Mech', badgeColor:'blue', img:'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=500&q=80', desc:'Tenkeyless, GX Blue switch, RGB, USB-C, tournir darajasi.' },
+
+      // 📸 KAMERALAR
+      { id:'c1', name:'Sony Alpha A7 IV Mirrorless', cat:'cameras', brand:'Sony', price:16900000, oldPrice:19000000, unit:'dona', stock:4, rating:4.9, reviews:312, badge:'📸 Pro', badgeColor:'black', img:'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=500&q=80', desc:'33MP, 10fps, 4K 60fps, Real-time AF, 5-axis stabilizatsiya.' },
+      { id:'c2', name:'GoPro HERO 13 Black', cat:'cameras', brand:'GoPro', price:3490000, oldPrice:4200000, unit:'dona', stock:15, rating:4.8, reviews:876, badge:'🏄 Action', badgeColor:'black', img:'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=500&q=80', desc:'5.3K 60fps, HyperSmooth 6.0, 10m suvga chidamli.' },
+      { id:'c3', name:'DJI Mini 4 Pro Drone', cat:'cameras', brand:'DJI', price:7490000, oldPrice:8900000, unit:'dona', stock:7, rating:4.9, reviews:234, badge:'🚁 Drone', badgeColor:'gray', img:'https://images.unsplash.com/photo-1473968512647-3e447244af8f?auto=format&fit=crop&w=500&q=80', desc:'4K HDR, 34 daqiqa uchish, omnidirectional obstacle sensing.' },
+
+      // 💊 SPORT & SOG'LIQ
+      { id:'sp1', name:'Nike Dri-FIT Running Set', cat:'sport', brand:'Nike', price:390000, oldPrice:520000, unit:'to\'plam', stock:35, rating:4.7, reviews:543, badge:'🏃 Sport', badgeColor:'orange', img:'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=500&q=80', desc:'Nemi o\'tkazuvchi material, yugurish uchun, erkaklar va ayollar.' },
+      { id:'sp2', name:'Xiaomi Smart Scale 2 Pro', cat:'sport', brand:'Xiaomi', price:290000, oldPrice:390000, unit:'dona', stock:50, rating:4.6, reviews:1234, badge:'⚖️ Smart', badgeColor:'cyan', img:'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=500&q=80', desc:'BMI, mushak, suyak, yog\' tarkibi, Bluetooth, 150kg.' },
+      { id:'sp3', name:'Fitbit Charge 6 Fitness Band', cat:'sport', brand:'Fitbit', price:1290000, oldPrice:1600000, unit:'dona', stock:22, rating:4.5, reviews:789, badge:'💪 Fitnes', badgeColor:'teal', img:'https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?auto=format&fit=crop&w=500&q=80', desc:'Google Maps, YouTube Music, EDA skaneri, 7 kun batareya.' },
+
+      // 🧴 GO'ZALLIK & PARFYUM
+      { id:'b1', name:'Chanel N°5 EDP 100ml', cat:'beauty', brand:'Chanel', price:2990000, oldPrice:3500000, unit:'dona', stock:12, rating:4.9, reviews:432, badge:'💎 Luxury', badgeColor:'black', img:'https://images.unsplash.com/photo-1541643600914-78b084683702?auto=format&fit=crop&w=500&q=80', desc:'Iconic atir, floral-aldehyde, 8+ soat chidamlilik.' },
+      { id:'b2', name:'Dyson Airwrap Multi-Styler', cat:'beauty', brand:'Dyson', price:3490000, oldPrice:4200000, unit:'dona', stock:9, rating:4.8, reviews:654, badge:'💨 Dyson', badgeColor:'purple', img:'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?auto=format&fit=crop&w=500&q=80', desc:'6 ta qo\'shimcha, coanda effekti, issiqliksiz jingalak va to\'g\'rilash.' },
+      { id:'b3', name:'La Roche-Posay Effaclar Gel', cat:'beauty', brand:'La Roche-Posay', price:189000, oldPrice:250000, unit:'dona', stock:40, rating:4.7, reviews:1123, badge:'🧴 Derma', badgeColor:'blue', img:'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=500&q=80', desc:'Yog\'li va aralash teri uchun, SLS-siz, dermatolog tasdiqlagan.' },
+
+      // 🪑 UY JIHOZLARI
+      { id:'f1', name:'IKEA POÄNG Kreslosi', cat:'furniture', brand:'IKEA', price:1290000, oldPrice:1600000, unit:'dona', stock:15, rating:4.6, reviews:543, badge:'🪑 IKEA', badgeColor:'yellow', img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=500&q=80', desc:'Qayindan yasalgan çerçeve, yumshoq matoli, 110kg ko\'taradi.' },
+      { id:'f2', name:'L-Shakl Stol + 2 Monitor', cat:'furniture', brand:'FlexiSpot', price:2490000, oldPrice:3200000, unit:'dona', stock:8, rating:4.7, reviews:234, badge:'🖥️ Setup', badgeColor:'gray', img:'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?auto=format&fit=crop&w=500&q=80', desc:'L-shakl gaming stol, kabel boshqaruvi, monitor stendi bilan.' },
+
+      // 📚 KITOBLAR & TA'LIM
+      { id:'ed1', name:'iPad Air 11" M2 WiFi 256GB', cat:'tablets', brand:'Apple', price:7990000, oldPrice:9200000, unit:'dona', stock:11, rating:4.9, reviews:876, badge:'✏️ Apple', badgeColor:'blue', img:'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80', desc:'M2 chip, Liquid Retina, Apple Pencil Pro, Magic Keyboard.' },
+      { id:'ed2', name:'Kindle Paperwhite 16GB', cat:'tablets', brand:'Amazon', price:890000, oldPrice:1100000, unit:'dona', stock:25, rating:4.8, reviews:1234, badge:'📚 Kitob', badgeColor:'orange', img:'https://images.unsplash.com/photo-1519682577862-22b62b24e493?auto=format&fit=crop&w=500&q=80', desc:'300ppi, 20 hafta batareya, suv o\'tkazmas IPX8, 16GB.' },
+
+      // 🚗 AVTO AKSESSUARLAR
+      { id:'car1', name:'Xiaomi 70mai Dashcam Pro+', cat:'auto', brand:'Xiaomi', price:590000, oldPrice:790000, unit:'dona', stock:28, rating:4.7, reviews:567, badge:'🚗 Dash', badgeColor:'blue', img:'https://images.unsplash.com/photo-1558618047-f4e70e3f7152?auto=format&fit=crop&w=500&q=80', desc:'2.7K 140° wide-angle, GPS, ADAS, WiFi app boshqaruv.' },
+      { id:'car2', name:'Belkin 15W MagSafe Car Mount', cat:'auto', brand:'Belkin', price:390000, oldPrice:520000, unit:'dona', stock:35, rating:4.5, reviews:342, badge:'🔋 MagSafe', badgeColor:'gray', img:'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=500&q=80', desc:'15W simsiz zaryadlash, magnit, havo shamollatgich uchun.' },
+
+      // 🌐 TARMOQ
+      { id:'net1', name:'TP-Link Archer AX80 WiFi 6', cat:'network', brand:'TP-Link', price:890000, oldPrice:1200000, unit:'dona', stock:20, rating:4.7, reviews:432, badge:'📡 WiFi 6', badgeColor:'blue', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=500&q=80', desc:'AX6000, 2.4+5GHz, 8-antenli, MU-MIMO, beamforming.' },
+      { id:'net2', name:'Anker 65W GaN Charger 4-in-1', cat:'network', brand:'Anker', price:290000, oldPrice:390000, unit:'dona', stock:45, rating:4.8, reviews:876, badge:'⚡ GaN', badgeColor:'orange', img:'https://images.unsplash.com/photo-1625895197185-efcec01cffe0?auto=format&fit=crop&w=500&q=80', desc:'65W GaN, 2xUSB-C + 2xUSB-A, noutbuk zaryadlash, kichik o\'lcham.' },
+    ];
+
+    const CATEGORIES = [
+      { id:'all',       label:'🛒 Barchasi',       count: ALL_PRODUCTS.length },
+      { id:'phones',    label:'📱 Smartfonlar',     count: ALL_PRODUCTS.filter(p=>p.cat==='phones').length },
+      { id:'laptops',   label:'💻 Noutbuklar',      count: ALL_PRODUCTS.filter(p=>p.cat==='laptops').length },
+      { id:'audio',     label:'🎧 Audio',           count: ALL_PRODUCTS.filter(p=>p.cat==='audio').length },
+      { id:'watches',   label:'⌚ Soatlar',          count: ALL_PRODUCTS.filter(p=>p.cat==='watches').length },
+      { id:'tv',        label:'📺 Televizorlar',     count: ALL_PRODUCTS.filter(p=>p.cat==='tv').length },
+      { id:'gaming',    label:'🎮 Gaming',           count: ALL_PRODUCTS.filter(p=>p.cat==='gaming').length },
+      { id:'mens',      label:'👕 Erkaklar',         count: ALL_PRODUCTS.filter(p=>p.cat==='mens').length },
+      { id:'womens',    label:'👗 Ayollar',          count: ALL_PRODUCTS.filter(p=>p.cat==='womens').length },
+      { id:'home',      label:'🏠 Uy texnikasi',     count: ALL_PRODUCTS.filter(p=>p.cat==='home').length },
+      { id:'cameras',   label:'📸 Kameralar',        count: ALL_PRODUCTS.filter(p=>p.cat==='cameras').length },
+      { id:'sport',     label:'💪 Sport',            count: ALL_PRODUCTS.filter(p=>p.cat==='sport').length },
+      { id:'beauty',    label:'💄 Go\'zallik',       count: ALL_PRODUCTS.filter(p=>p.cat==='beauty').length },
+      { id:'tablets',   label:'📱 Planshetlar',      count: ALL_PRODUCTS.filter(p=>p.cat==='tablets').length },
+      { id:'furniture', label:'🪑 Mebel',            count: ALL_PRODUCTS.filter(p=>p.cat==='furniture').length },
+      { id:'auto',      label:'🚗 Avto',             count: ALL_PRODUCTS.filter(p=>p.cat==='auto').length },
+      { id:'network',   label:'📡 Tarmoq',           count: ALL_PRODUCTS.filter(p=>p.cat==='network').length },
+    ];
+
+    const BADGE_COLORS = {
+      red:    'bg-red-500 text-white',
+      green:  'bg-emerald-500 text-white',
+      blue:   'bg-blue-500 text-white',
+      yellow: 'bg-amber-400 text-gray-900',
+      gray:   'bg-gray-700 text-white',
+      purple: 'bg-purple-500 text-white',
+      orange: 'bg-orange-500 text-white',
+      cyan:   'bg-cyan-500 text-white',
+      pink:   'bg-pink-500 text-white',
+      black:  'bg-gray-900 text-white',
+      brown:  'bg-amber-800 text-white',
+      teal:   'bg-teal-500 text-white',
+    };
+
+    function formatPrice(val) {
+      if (!val) return "0 so'm";
+      return val.toLocaleString('uz-UZ') + " so'm";
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // AI MASLAHATCHI — KATEGORIYA KALIT SO'ZLARI
+    // ═══════════════════════════════════════════════════════
+    // Har bir kalit so'z uchun: qaysi kategoriya(lar) chiqishi kerak
+    const CAT_KEYWORDS = {
+      'telefon':    ['phones'],
+      'smartfon':   ['phones'],
+      'mobil':      ['phones'],
+      'phone':      ['phones'],
+      'iphone':     ['phones'],
+      'ayfon':      ['phones'],
+      'tel':        ['phones'],
+      'sotka':      ['phones'],
+      'redmi':      ['phones'],
+      'honor':      ['phones'],
+      'poco':       ['phones'],
+      'realme':     ['phones'],
+      'pixel':      ['phones'],
+      'samsung':    ['phones','tv','watches','audio'],
+      'xiaomi':     ['phones','watches','sport','auto'],
+      'apple':      ['phones','laptops','audio','watches','tablets'],
+      'noutbuk':    ['laptops'],
+      'laptop':     ['laptops'],
+      'kompyuter':  ['laptops'],
+      'komp':       ['laptops'],
+      'macbook':    ['laptops'],
+      'asus':       ['laptops'],
+      'lenovo':     ['laptops'],
+      'hp':         ['laptops'],
+      'gaming':     ['gaming','laptops'],
+      'o\'yin':     ['gaming'],
+      'oyun':       ['gaming'],
+      'geym':       ['gaming'],
+      'ps5':        ['gaming'],
+      'playstation':['gaming'],
+      'xbox':       ['gaming'],
+      'quloqchin':  ['audio'],
+      'naushnik':   ['audio'],
+      'airpods':    ['audio'],
+      'speaker':    ['audio'],
+      'kolonka':    ['audio'],
+      'kalonka':    ['audio'],
+      'music':      ['audio'],
+      'musiqa':     ['audio'],
+      'soat':       ['watches'],
+      'smartwatch': ['watches'],
+      'watch':      ['watches'],
+      'televizor':  ['tv'],
+      'tv':         ['tv'],
+      'ekran':      ['tv'],
+      'plazma':     ['tv'],
+      'kamera':     ['cameras'],
+      'fotoaparat': ['cameras'],
+      'drone':      ['cameras'],
+      'dron':       ['cameras'],
+      'gopro':      ['cameras'],
+      'kiyim':      ['mens','womens'],
+      'erkak':      ['mens'],
+      'ayol':       ['womens'],
+      'ko\'ylak':   ['mens','womens'],
+      'jinsi':      ['mens'],
+      'futbolka':   ['mens','womens'],
+      'krossovka':  ['mens','womens'],
+      'poyabzal':   ['mens','womens'],
+      'oyoq kiyim': ['mens','womens'],
+      'dress':      ['womens'],
+      'sumka':      ['womens'],
+      'etik':       ['mens','womens'],
+      'sport':      ['sport','mens','womens'],
+      'fitnes':     ['sport'],
+      'trenirovka': ['sport'],
+      'atir':       ['beauty'],
+      'parfyum':    ['beauty'],
+      'duxi':       ['beauty'],
+      'go\'zallik': ['beauty'],
+      'krem':       ['beauty'],
+      'soch':       ['beauty'],
+      'uy':         ['home','furniture'],
+      'texnika':    ['home','tv','laptops','phones'],
+      'gadjet':     ['phones','watches','audio','tablets'],
+      'gatjet':     ['phones','watches','audio','tablets'],
+      'gadget':     ['phones','watches','audio','tablets'],
+      'muzlatgich': ['home'],
+      'xolodilnik': ['home'],
+      'changyutgich':['home'],
+      'pilesos':    ['home'],
+      'mebel':      ['furniture'],
+      'stol':       ['furniture'],
+      'kreslo':     ['furniture'],
+      'planshet':   ['tablets'],
+      'ipad':       ['tablets'],
+      'ayped':      ['tablets'],
+      'tab':        ['tablets'],
+      'kitob':      ['tablets'],
+      'avto':       ['auto'],
+      'mashina':    ['auto'],
+      'wifi':       ['network'],
+      'router':     ['network'],
+      'zaryadlagich':['network'],
+      'zaryadka':   ['network'],
+      'aksiya':     [],
+      'chegirma':   [],
+      'arzon':      [],
+      'qimmat':     [],
+      'premium':    [],
+    };
+
+    // Budget intervallar
+    const BUDGETS = [
+      { label:'💚 500 000 so\'mgacha',   max:500000,              emoji:'💚' },
+      { label:'💙 1 500 000 so\'mgacha', max:1500000,             emoji:'💙' },
+      { label:'💛 5 000 000 so\'mgacha', max:5000000,             emoji:'💛' },
+      { label:'🔴 5 000 000+',           max:Infinity,            emoji:'🔴' },
+    ];
+
+    // ═══════════════════════════════════════════════════════
+    // MAIN APP COMPONENT
+    // ═══════════════════════════════════════════════════════
+    function App() {
+      const [products] = useState(ALL_PRODUCTS);
+      const [cart, setCart] = useState([]);
+      const [favorites, setFavorites] = useState([]);
+      const [orders, setOrders] = useState([]);
+      const [wallet, setWallet] = useState(150000);
+      const [useCashback, setUseCashback] = useState(false);
+      const [category, setCategory] = useState('all');
+      const [search, setSearch] = useState('');
+      const [darkMode, setDarkMode] = useState(false);
+      const [sortBy, setSortBy] = useState('popular');
+      const [toast, setToast] = useState(null);
+      const [toastType, setToastType] = useState('success');
+
+      // Modals
+      const [isCartOpen, setIsCartOpen] = useState(false);
+      const [isAiOpen, setIsAiOpen] = useState(false);
+      const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+      const [orderDone, setOrderDone] = useState(null);
+      const [isAdminOpen, setIsAdminOpen] = useState(false);
+      const [isMapOpen, setIsMapOpen] = useState(false);
+      const [isFavOpen, setIsFavOpen] = useState(false);
+      const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+      const [detailProduct, setDetailProduct] = useState(null);
+
+      // AI
+      const [aiQuery, setAiQuery] = useState('');
+      const [aiTyping, setAiTyping] = useState(false);
+      const [aiBudget, setAiBudget] = useState(null);       // joriy budget filter
+      const [aiWaitingBudget, setAiWaitingBudget] = useState(false); // budget so'rash holati
+      const [aiPendingCats, setAiPendingCats] = useState([]); // budget kelgunga qadar saqlab turilgan kategoriyalar
+      const aiChatRef = useRef(null);
+      const aiInputRef = useRef(null);
+      const [aiMessages, setAiMessages] = useState([
+        { sender:'ai', text:'Assalomu alaykum! 👋 Men UzumShop AI maslahatchisiman.\n\nIstalgan mahsulot nomini yozing — saytdagi barcha o\'sha turdagi mahsulotlarni ko\'rsataman!\n\nMasalan: "telefon", "noutbuk", "kiyim", "soat", "quloqchin"...\n\nShuningdek budgetingizni aytsa bo\'ladi: "500 000 gacha telefon" 💰' }
+      ]);
+
+      const showToast = useCallback((msg, type='success') => {
+        setToast(msg); setToastType(type);
+        setTimeout(() => setToast(null), 3000);
+      }, []);
+
+      const toggleTheme = () => {
+        setDarkMode(d => !d);
+        document.documentElement.classList.toggle('dark');
+      };
+
+      // Filtered + Sorted
+      const filtered = useMemo(() => {
+        let list = products.filter(p => {
+          if (category !== 'all' && p.cat !== category) return false;
+          if (search.trim()) {
+            const q = search.toLowerCase();
+            return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+          }
+          return true;
+        });
+        if (sortBy === 'price_asc')  list = [...list].sort((a,b) => a.price - b.price);
+        if (sortBy === 'price_desc') list = [...list].sort((a,b) => b.price - a.price);
+        if (sortBy === 'rating')     list = [...list].sort((a,b) => b.rating - a.rating);
+        if (sortBy === 'discount')   list = [...list].sort((a,b) => (b.oldPrice?b.oldPrice-b.price:0) - (a.oldPrice?a.oldPrice-a.price:0));
+        return list;
+      }, [products, category, search, sortBy]);
+
+      const addToCart = useCallback((p) => {
+        setCart(prev => {
+          const ex = prev.find(i => i.product.id === p.id);
+          if (ex) return prev.map(i => i.product.id === p.id ? { ...i, qty: i.qty+1 } : i);
+          return [...prev, { product:p, qty:1 }];
+        });
+        showToast(`"${p.name}" savatga qo'shildi! 🛒`);
+      }, [showToast]);
+
+      const addBatchToCart = useCallback((prods) => {
+        setCart(prev => {
+          const updated = [...prev];
+          prods.forEach(p => {
+            const idx = updated.findIndex(i => i.product.id === p.id);
+            if (idx >= 0) updated[idx] = { ...updated[idx], qty: updated[idx].qty+1 };
+            else updated.push({ product:p, qty:1 });
+          });
+          return updated;
+        });
+        showToast(`${prods.length} ta mahsulot savatga qo'shildi! ✨`);
+      }, [showToast]);
+
+      const updateQty = useCallback((id, delta) => {
+        setCart(prev => prev.map(i => i.product.id===id ? { ...i, qty:i.qty+delta } : i).filter(i => i.qty>0));
+      }, []);
+
+      const toggleFav = useCallback((id) => {
+        setFavorites(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev,id]);
+      }, []);
+
+      const cartSubtotal = cart.reduce((s,i) => s + i.product.price*i.qty, 0);
+      const deliveryFee = cartSubtotal >= 500000 || cartSubtotal === 0 ? 0 : 25000;
+      const usedWallet = useCashback ? Math.min(wallet, cartSubtotal) : 0;
+      const finalTotal = Math.max(0, cartSubtotal - usedWallet + deliveryFee);
+      const totalCount = cart.reduce((s,i) => s+i.qty, 0);
+      const discountCount = ALL_PRODUCTS.filter(p=>p.oldPrice).length;
+
+      const handleCheckout = (e) => {
+        e.preventDefault();
+        const orderId = 'UZ-' + Math.floor(100000 + Math.random()*900000);
+        const earned = Math.round(finalTotal * 0.025);
+        const newOrd = { id:orderId, total:finalTotal, subtotal:cartSubtotal, deliveryFee, usedCashback:usedWallet, earned, date:new Date().toLocaleString('uz-UZ'), items:[...cart] };
+        setOrders(prev => [newOrd, ...prev]);
+        setWallet(prev => prev - usedWallet + earned);
+        setOrderDone(newOrd);
+        setCart([]); setUseCashback(false); setIsCheckoutOpen(false);
+        try { confetti({ particleCount:120, spread:70, origin:{y:0.6}, colors:['#e11d48','#f97316','#fbbf24'] }); } catch(err){}
+      };
+
+      // ─── AI YORDAMCHI FUNKSIYALAR ───────────────────────────
+      // Matndan raqam ajratib olish: "2 million", "500 ming", "3 mln", "1500000"
+      const extractBudget = (text) => {
+        const lq = text.toLowerCase().replace(/\s/g,'');
+        // "X million" / "X mln"
+        let m = lq.match(/(\d+[\.,]?\d*)\s*mln|million|milyon/);
+        if (m) return parseFloat(m[1].replace(',','.')) * 1000000;
+        // "X ming" / "K"
+        m = lq.match(/(\d+[\.,]?\d*)\s*ming|k(?!\w)/);
+        if (m) return parseFloat(m[1].replace(',','.')) * 1000;
+        // to'g'ridan-to'g'ri raqam (5 xonali+)
+        m = text.match(/\b(\d{4,})\b/);
+        if (m) return parseInt(m[1]);
+        // oddiy raqam "2" (million deb olamiz agar kichik bo'lsa)
+        m = text.match(/\b(\d{1,3})\b/);
+        if (m) {
+          const n = parseInt(m[1]);
+          return n <= 100 ? n * 1000000 : n * 1000; // "2" → 2 mln, "500" → 500 000
+        }
+        return null;
+      };
+
+      // AI handler
+      const handleAiSend = (overrideText) => {
+        const q = (overrideText !== undefined ? overrideText : aiQuery).trim();
+        if (!q || aiTyping) return;
+        const userMsg = { sender:'user', text: q };
+        setAiMessages(prev => [...prev, userMsg]);
+        setAiQuery('');
+        setAiTyping(true);
+
+        setTimeout(() => {
+          const lq = q.toLowerCase();
+          let reply;
+
+          // ── 1. BUDGET KUTILAYOTGAN HOLAT ────────────────────
+          if (aiWaitingBudget) {
+            const budget = extractBudget(q);
+            if (budget) {
+              setAiBudget(budget);
+              setAiWaitingBudget(false);
+              const cats = aiPendingCats;
+              setAiPendingCats([]);
+              let found = ALL_PRODUCTS.filter(p => {
+                const inCat = cats.length === 0 || cats.includes(p.cat);
+                return inCat && p.price <= budget;
+              }).sort((a,b) => b.price - a.price);
+              if (found.length === 0) {
+                found = ALL_PRODUCTS.filter(p => cats.length === 0 || cats.includes(p.cat)).sort((a,b) => a.price - b.price).slice(0,4);
+                reply = { sender:'ai', text:`😕 ${formatPrice(budget)} budgetda ${cats.length>0?'bu kategoriyada':''} mahsulot topilmadi.\n\nEng arzon variantlar ko'rsatildi 👇`, products: found, budgetNote: `Budget: ${formatPrice(budget)}` };
+              } else {
+                reply = { sender:'ai', text:`✅ ${formatPrice(budget)} budgetda ${found.length} ta mahsulot topildi! 🎉\n\nSizga mos variantlar 👇`, products: found, budgetNote: `Budget: ${formatPrice(budget)}` };
+              }
+            } else {
+              reply = { sender:'ai', text:`Budgetni tushunmadim 😅\n\nQuyidagicha yozing:\n• "2 million"\n• "1 500 000"\n• "500 ming"\n• "3 mln"` };
+            }
+            setAiTyping(false);
+            setAiMessages(prev => [...prev, reply]);
+            setTimeout(() => { if(aiChatRef.current) aiChatRef.current.scrollTop = aiChatRef.current.scrollHeight; }, 50);
+            return;
+          }
+
+          // ── 2. BUDGET + KATEGORIYA BITTA XABARDA ────────────
+          // "1 million ga telefon", "500 ming gacha noutbuk"
+          const inlineBudget = extractBudget(q);
+          if (inlineBudget) {
+            let matchedCats = [];
+            for (const [kw, cats] of Object.entries(CAT_KEYWORDS)) {
+              if (lq.includes(kw) && cats.length > 0) { matchedCats = [...new Set([...matchedCats, ...cats])]; }
+            }
+            let found = ALL_PRODUCTS.filter(p => {
+              const inCat = matchedCats.length === 0 || matchedCats.includes(p.cat);
+              return inCat && p.price <= inlineBudget;
+            }).sort((a,b) => b.price - a.price);
+            if (found.length === 0) {
+              found = ALL_PRODUCTS.filter(p => matchedCats.length === 0 || matchedCats.includes(p.cat)).sort((a,b) => a.price - b.price).slice(0,4);
+              reply = { sender:'ai', text:`😕 ${formatPrice(inlineBudget)} da mos mahsulot topilmadi.\nEng arzon variantlar 👇`, products: found, budgetNote:`Budget: ${formatPrice(inlineBudget)}` };
+            } else {
+              const catLabel = matchedCats.length>0 ? CATEGORIES.filter(c=>matchedCats.includes(c.id)).map(c=>c.label).join(', ') : 'barcha';
+              reply = { sender:'ai', text:`💰 ${formatPrice(inlineBudget)} budgetda ${catLabel} mahsulotlari — ${found.length} ta topildi! 🎉`, products: found, budgetNote:`Budget: ${formatPrice(inlineBudget)}` };
+            }
+            setAiBudget(inlineBudget);
+            setAiTyping(false);
+            setAiMessages(prev => [...prev, reply]);
+            setTimeout(() => { if(aiChatRef.current) aiChatRef.current.scrollTop = aiChatRef.current.scrollHeight; }, 50);
+            return;
+          }
+
+          // ── 3. MAXSUS BUYRUQLAR ──────────────────────────────
+          if (lq.match(/salom|assalom|hello|hi\b/)) {
+            reply = { sender:'ai', text:'Vaalaykum assalom! 😊\n\nQanday mahsulot qidiryapsiz? Shunchaki yozing — masalan:\n"telefon", "noutbuk", "kiyim", "soat"\n\nBudget bilan ham ayta olasiz:\n"2 million gacha telefon" 📱' };
+          }
+          else if (lq.match(/rahmat|yaxshi|ok\b|bo\'ldi|ajoyib|zo\'r/)) {
+            reply = { sender:'ai', text:'Xizmatda! 🎉 Yana yordam kerak bo\'lsa — shu yerdaman. Yaxshi xaridlar! 🛒' };
+          }
+          else if (lq.match(/budget|qancha pul|narx qancha|pul|tejam/)) {
+            reply = { sender:'ai', text:'Budgetingiz qancha? Menga necha so\'m deb ayting, shunga mos mahsulotlarni ko\'rsataman! 💰\n\nMasalan:\n• "1 million"\n• "500 ming"\n• "3 mln"\n• "2 500 000"' };
+            setAiWaitingBudget(true);
+            setAiPendingCats([]);
+          }
+          else if (lq.match(/aksiya|chegirma|sale|discount/)) {
+            const sale = ALL_PRODUCTS.filter(p=>p.oldPrice).sort((a,b)=>(b.oldPrice-b.price)-(a.oldPrice-a.price));
+            reply = { sender:'ai', text:`🔥 Hozirgi eng katta chegirmalar — ${sale.length} ta mahsulot!`, products: sale };
+          }
+          else if (lq.match(/arzon|tejam|budget mahsulot|kam narx/)) {
+            const cheap = [...ALL_PRODUCTS].sort((a,b)=>a.price-b.price).slice(0,8);
+            reply = { sender:'ai', text:`💚 Eng arzon ${cheap.length} ta mahsulot:`, products: cheap };
+          }
+          else if (lq.match(/qimmat|premium|yaxshi|top|eng zo\'r|flagship/)) {
+            const top = [...ALL_PRODUCTS].sort((a,b)=>b.price-a.price).slice(0,6);
+            reply = { sender:'ai', text:`👑 Premium — eng yaxshi ${top.length} ta mahsulot:`, products: top };
+          }
+          else {
+            // ── 4. KATEGORIYA QIDIRISH ───────────────────────────
+            let matchedCats = [];
+            let matchedKeyword = null;
+            for (const [kw, cats] of Object.entries(CAT_KEYWORDS)) {
+              if (lq.includes(kw)) {
+                matchedKeyword = kw;
+                matchedCats = [...new Set([...matchedCats, ...cats])];
+              }
+            }
+
+            if (matchedCats.length > 0) {
+              const found = ALL_PRODUCTS.filter(p => matchedCats.includes(p.cat));
+              const catLabels = CATEGORIES.filter(c=>matchedCats.includes(c.id)).map(c=>c.label).join(' + ');
+              if (aiBudget) {
+                // Avvalgi budget bor bo'lsa, shu budget bilan filter
+                const filtered2 = found.filter(p=>p.price<=aiBudget);
+                reply = {
+                  sender:'ai',
+                  text: filtered2.length>0
+                    ? `📱 ${catLabels} — ${formatPrice(aiBudget)} budgetda ${filtered2.length} ta topildi:`
+                    : `😕 ${formatPrice(aiBudget)} budgetda ${catLabels} topilmadi. Hammasini ko'rsataman:`,
+                  products: filtered2.length>0 ? filtered2 : found,
+                  budgetNote: `Budget: ${formatPrice(aiBudget)}`,
+                  askBudget: found.length > 3
+                };
+              } else {
+                reply = {
+                  sender:'ai',
+                  text:`✅ "${q}" bo'yicha ${catLabels} — jami ${found.length} ta mahsulot topildi! 👇\n\n💡 Budget ko'rsatish uchun: "2 million gacha" deb yozing`,
+                  products: found,
+                  askBudget: true
+                };
+              }
+              // Budget so'rash statusini o'rnatish
+              if (!aiBudget) { setAiPendingCats(matchedCats); }
+            }
+            else {
+              // ── 5. TO'G'RIDAN-TO'G'RI BREND/NOMI QIDIRISH ──────
+              const byName = ALL_PRODUCTS.filter(p =>
+                p.name.toLowerCase().includes(lq) ||
+                p.brand.toLowerCase().includes(lq) ||
+                p.desc.toLowerCase().includes(lq)
+              );
+              if (byName.length > 0) {
+                reply = { sender:'ai', text:`🔍 "${q}" bo'yicha ${byName.length} ta natija:`, products: byName };
+              } else {
+                reply = { sender:'ai', text:`Uzr, "${q}" topilmadi 🤔\n\nSinab ko'ring:\n📱 "telefon" — barcha telefonlar\n💻 "noutbuk" — barcha noutbuklar\n🎧 "quloqchin" — audio mahsulotlar\n👟 "kiyim" — kiyim-kechaklar\n⌚ "soat" — smart soatlar\n\n💰 Budget bilan: "1 million gacha telefon"` };
+              }
+            }
+          }
+
+          setAiTyping(false);
+          setAiMessages(prev => [...prev, reply]);
+          setTimeout(() => { if(aiChatRef.current) aiChatRef.current.scrollTop = aiChatRef.current.scrollHeight; }, 50);
+        }, 900);
+      };
+
+      // ═══════════════════════════════════════════════════
+      // RENDER
+      // ═══════════════════════════════════════════════════
+      return (
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+
+          {/* ── TOP ANNOUNCEMENT BAR ── */}
+          <div className="bg-gradient-to-r from-rose-600 via-red-500 to-orange-500 text-white text-xs py-2 px-4">
+            <div className="max-w-7xl mx-auto flex justify-between items-center flex-wrap gap-1">
+              <span>🚀 500 000 so'mdan yuqori buyurtmalarga <strong>BEPUL yetkazib berish!</strong></span>
+              <span className="flex items-center gap-3">
+                <span>🎁 Hamyon: <strong className="text-yellow-200">{formatPrice(wallet)}</strong></span>
+                <span>⚡ Promokod: <strong className="bg-white/20 px-2 py-0.5 rounded text-yellow-200">UZUM2026</strong></span>
+              </span>
+            </div>
+          </div>
+
+          {/* ── NAVBAR ── */}
+          <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+              {/* Logo */}
+              <div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => { setSearch(''); setCategory('all'); }}>
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 to-orange-500 flex items-center justify-center font-black text-xl text-white shadow-lg">U</div>
+                <div className="hidden sm:block">
+                  <div className="text-xl font-black bg-gradient-to-r from-rose-600 to-orange-500 bg-clip-text text-transparent leading-none">UzumShop</div>
+                  <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">O'zbekiston #1 Online Market</div>
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setCategory('all'); }}
+                  placeholder="Mahsulot, brend, model qidiring..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-sm border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-500 dark:text-gray-200 placeholder-gray-400"
+                />
+                <span className="absolute left-3.5 top-3 text-gray-400 text-sm">🔍</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <button onClick={() => setIsAiOpen(true)} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold shadow-md hover:scale-105 transition-all">
+                  <span>✨</span><span>AI Bot</span>
+                </button>
+                <button onClick={() => setIsFavOpen(true)} className="relative p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Sevimlilar">
+                  <span className="text-lg">❤️</span>
+                  {favorites.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{favorites.length}</span>}
+                </button>
+                <button onClick={toggleTheme} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm">{darkMode ? '☀️' : '🌙'}</button>
+                <button onClick={() => setIsCartOpen(true)} className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white text-xs sm:text-sm font-bold shadow-md transition-all">
+                  <span>🛒</span>
+                  <span className="hidden sm:inline">{totalCount > 0 ? formatPrice(cartSubtotal) : 'Savat'}</span>
+                  {totalCount > 0 && <span className="bg-yellow-400 text-gray-900 px-1.5 rounded-full text-[10px] font-black">{totalCount}</span>}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* ── CATEGORIES SCROLLABLE ── */}
+          <div className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-[73px] z-30">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-2.5">
+                {CATEGORIES.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCategory(c.id)}
+                    className={`flex-shrink-0 flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      category === c.id
+                        ? 'bg-gradient-to-r from-rose-600 to-orange-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <span>{c.label}</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${category===c.id?'bg-white/25 text-white':'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}>{c.count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── MAIN ── */}
+          <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+            {/* Hero Banner */}
+            {category === 'all' && !search && (
+              <div className="mb-6 rounded-3xl overflow-hidden relative bg-gradient-to-br from-gray-900 via-rose-950 to-orange-950 p-6 sm:p-10 shadow-2xl border border-rose-500/20">
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="space-y-3 max-w-xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30">
+                      🔥 11.11 — Yilning eng katta savdosi
+                    </div>
+                    <h2 className="text-2xl sm:text-4xl font-black text-white leading-tight">
+                      Gadjetlar, kiyimlar,<br/>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-rose-300">texnika va yana ko'p!</span>
+                    </h2>
+                    <p className="text-gray-400 text-sm">{discountCount}+ mahsulotda aksiya | Bepul yetkazib berish | Kafolatli xarid</p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button onClick={() => setIsAiOpen(true)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-xs shadow-lg hover:scale-105 transition-all">✨ AI Maslahatchi</button>
+                      <button onClick={() => { setSortBy('discount'); }} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-500 text-white font-bold text-xs shadow-lg hover:scale-105 transition-all">🔥 Aksiyalar</button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs w-full max-w-xs">
+                    {[
+                      { icon:'📱', label:'iPhone 16 Pro', sub:'-12% chegirma' },
+                      { icon:'💻', label:'Gaming Noutbuk', sub:'RTX 4070 bilan' },
+                      { icon:'🎧', label:'AirPods Pro 3', sub:'-14% bugun' },
+                      { icon:'👟', label:'Nike Originals', sub:'Yangi kolleksiya' },
+                    ].map((item,i) => (
+                      <button key={i} onClick={() => setSearch(item.label.split(' ')[0])} className="bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-left border border-white/10 transition-colors">
+                        <span className="text-2xl block">{item.icon}</span>
+                        <span className="font-bold text-white text-[11px] block mt-1">{item.label}</span>
+                        <span className="text-gray-400 text-[10px]">{item.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sort & Count bar */}
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                  {CATEGORIES.find(c=>c.id===category)?.label || '🛒 Barchasi'}
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400">{filtered.length} ta</span>
+                </h2>
+                {search && <p className="text-xs text-gray-400 mt-0.5">"{search}" bo'yicha qidiruv</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                  className="text-xs px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                >
+                  <option value="popular">🔥 Mashhurlar</option>
+                  <option value="rating">⭐ Reyting</option>
+                  <option value="price_asc">💰 Narx: past → baland</option>
+                  <option value="price_desc">💎 Narx: baland → past</option>
+                  <option value="discount">🏷️ Chegirma %</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Products grid */}
+            {filtered.length === 0 ? (
+              <div className="bg-white dark:bg-gray-900 rounded-3xl p-16 text-center border border-gray-200 dark:border-gray-800 space-y-4">
+                <span className="text-6xl block">🔍</span>
+                <h3 className="font-black text-gray-800 dark:text-gray-200 text-lg">Mahsulot topilmadi</h3>
+                <p className="text-sm text-gray-400">Qidiruv so'zini o'zgartiring yoki AI Maslahatchidan so'rang</p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => { setSearch(''); setCategory('all'); }} className="px-5 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-bold">Tozalash</button>
+                  <button onClick={() => setIsAiOpen(true)} className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold">✨ AI yordam</button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                {filtered.map(p => {
+                  const isFav = favorites.includes(p.id);
+                  const discount = p.oldPrice ? Math.round((1 - p.price/p.oldPrice)*100) : 0;
+                  return (
+                    <div key={p.id} className="product-card bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm flex flex-col">
+                      {/* Image */}
+                      <div className="relative aspect-square bg-gray-50 dark:bg-gray-800 overflow-hidden cursor-pointer" onClick={() => setDetailProduct(p)}>
+                        <img src={p.img} alt={p.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                        {p.badge && (
+                          <span className={`absolute top-2 left-2 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${BADGE_COLORS[p.badgeColor]||'bg-gray-700 text-white'}`}>
+                            {p.badge}
+                          </span>
+                        )}
+                        {discount > 0 && (
+                          <span className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-rose-500 text-white">-{discount}%</span>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFav(p.id); }}
+                          className={`absolute bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md text-sm transition-all ${isFav ? 'bg-rose-500 text-white scale-110' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-rose-500'}`}
+                        >{isFav ? '❤️' : '🤍'}</button>
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-2.5 sm:p-3.5 flex flex-col flex-1 gap-1.5">
+                        <div className="text-[9px] sm:text-[10px] text-gray-400 font-semibold uppercase tracking-wider">{p.brand}</div>
+                        <h3 onClick={() => setDetailProduct(p)} className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-rose-600 dark:hover:text-rose-400 transition-colors">{p.name}</h3>
+                        <div className="flex items-center gap-1 text-[10px]">
+                          <span className="text-amber-400">{'★'.repeat(Math.floor(p.rating))}</span>
+                          <span className="text-gray-400 font-medium">{p.rating} ({p.reviews.toLocaleString()})</span>
+                        </div>
+                        <div className="mt-auto pt-1.5">
+                          <div className="font-black text-sm sm:text-base text-rose-600 dark:text-rose-400 leading-none">{formatPrice(p.price)}</div>
+                          {p.oldPrice && <div className="text-[10px] text-gray-400 line-through">{formatPrice(p.oldPrice)}</div>}
+                        </div>
+                        <button
+                          onClick={() => addToCart(p)}
+                          className="w-full py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white text-xs font-bold shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98] mt-1"
+                        >+ Savatga</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </main>
+
+          {/* ── FOOTER ── */}
+          <footer className="bg-gray-900 text-gray-400 mt-12 py-10 px-4">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-xs">
+              <div>
+                <div className="text-white font-black text-lg mb-2">UzumShop</div>
+                <p>O'zbekistonning yetakchi online do'koni. 1 000 000+ mahsulot, 24/7 xizmat.</p>
+              </div>
+              <div>
+                <div className="text-white font-bold mb-2">Kategoriyalar</div>
+                <ul className="space-y-1">{['Smartfonlar','Noutbuklar','Kiyimlar','Uy texnikasi','Gaming'].map(c=><li key={c}><button onClick={() => {}} className="hover:text-rose-400 transition-colors">{c}</button></li>)}</ul>
+              </div>
+              <div>
+                <div className="text-white font-bold mb-2">Mijozlarga</div>
+                <ul className="space-y-1">{['Yetkazib berish','Qaytarish siyosati','Kafolat','To\'lov usullari'].map(c=><li key={c}>{c}</li>)}</ul>
+              </div>
+              <div>
+                <div className="text-white font-bold mb-2">Aloqa</div>
+                <ul className="space-y-1">
+                  <li>📞 1234 (bepul)</li>
+                  <li>✉️ info@uzumshop.uz</li>
+                  <li>📍 Toshkent, O'zbekiston</li>
+                </ul>
+              </div>
+            </div>
+            <div className="max-w-7xl mx-auto border-t border-gray-800 mt-8 pt-6 text-center text-[11px]">© 2026 UzumShop — Barcha huquqlar himoyalangan.</div>
+          </footer>
+
+          {/* ── FLOATING AI BUTTON ── */}
+          <button
+            onClick={() => setIsAiOpen(true)}
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-2xl shadow-violet-500/40 hover:scale-105 active:scale-95 transition-all border border-violet-400/30"
+          >
+            <span className="text-lg relative">✨<span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-ping"></span></span>
+            <span className="text-xs font-bold hidden sm:inline">AI Maslahatchi</span>
+          </button>
+
+          {/* ══════════════════════════════════════
+              MODALS
+          ══════════════════════════════════════ */}
+
+          {/* PRODUCT DETAIL */}
+          {detailProduct && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setDetailProduct(null)}>
+              <div className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto fade-up" onClick={e => e.stopPropagation()}>
+                <div className="relative">
+                  <img src={detailProduct.img} alt={detailProduct.name} className="w-full h-64 sm:h-80 object-cover" />
+                  <button onClick={() => setDetailProduct(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors font-bold">✕</button>
+                  {detailProduct.badge && <span className={`absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-full ${BADGE_COLORS[detailProduct.badgeColor]}`}>{detailProduct.badge}</span>}
+                  {detailProduct.oldPrice && <span className="absolute bottom-4 right-4 bg-rose-500 text-white text-xs font-black px-3 py-1 rounded-full">-{Math.round((1-detailProduct.price/detailProduct.oldPrice)*100)}% chegirma</span>}
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">{detailProduct.brand}</div>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white">{detailProduct.name}</h2>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex text-amber-400">{'★'.repeat(Math.floor(detailProduct.rating))}</div>
+                      <span className="text-sm text-gray-500">{detailProduct.rating} · {detailProduct.reviews.toLocaleString()} sharh</span>
+                      <span className="text-xs text-emerald-500 font-semibold">✓ Stokda: {detailProduct.stock} ta</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{detailProduct.desc}</p>
+                  <div className="flex items-end gap-3">
+                    <div className="text-3xl font-black text-rose-600 dark:text-rose-400">{formatPrice(detailProduct.price)}</div>
+                    {detailProduct.oldPrice && <div className="text-base text-gray-400 line-through pb-1">{formatPrice(detailProduct.oldPrice)}</div>}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => { addToCart(detailProduct); setDetailProduct(null); }} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold shadow-lg hover:scale-[1.02] transition-all">🛒 Savatga qo'shish</button>
+                    <button onClick={() => toggleFav(detailProduct.id)} className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl border-2 transition-all ${favorites.includes(detailProduct.id)?'bg-rose-50 border-rose-500 text-rose-500 dark:bg-rose-950':'border-gray-200 dark:border-gray-700 hover:border-rose-400'}`}>❤️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FAVORITES */}
+          {isFavOpen && (
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
+              <div className="w-full max-w-sm bg-white dark:bg-gray-900 h-full flex flex-col shadow-2xl slide-in">
+                <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-gray-800">
+                  <h3 className="font-black text-lg">❤️ Sevimlilar ({favorites.length})</h3>
+                  <button onClick={() => setIsFavOpen(false)} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold">✕</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {favorites.length === 0 ? (
+                    <div className="text-center py-16 text-gray-400">
+                      <span className="text-5xl block mb-3">🤍</span>
+                      <p className="text-sm">Hali sevimli mahsulotlar yo'q</p>
+                    </div>
+                  ) : (
+                    products.filter(p => favorites.includes(p.id)).map(p => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                        <img src={p.img} className="w-14 h-14 rounded-xl object-cover" alt="" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-xs line-clamp-1">{p.name}</div>
+                          <div className="text-rose-600 font-bold text-sm">{formatPrice(p.price)}</div>
+                        </div>
+                        <button onClick={() => addToCart(p)} className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold">+</button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CART DRAWER */}
+          {isCartOpen && (
+            <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
+              <div className="w-full max-w-md bg-white dark:bg-gray-900 h-full flex flex-col shadow-2xl slide-in">
+                <div className="flex justify-between items-center p-5 border-b border-gray-100 dark:border-gray-800">
+                  <h3 className="font-black text-xl">🛒 Savat ({totalCount})</h3>
+                  <button onClick={() => setIsCartOpen(false)} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-gray-500">✕</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {cart.length === 0 ? (
+                    <div className="text-center py-20 text-gray-400 space-y-3">
+                      <span className="text-6xl block">🛒</span>
+                      <p className="text-sm">Savat bo'sh</p>
+                      <button onClick={() => setIsCartOpen(false)} className="px-6 py-2 rounded-xl bg-rose-600 text-white text-sm font-bold">Xaridga o'tish</button>
+                    </div>
+                  ) : (
+                    cart.map(item => (
+                      <div key={item.product.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                        <img src={item.product.img} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0" alt="" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-xs line-clamp-1">{item.product.name}</div>
+                          <div className="text-rose-600 font-black text-sm mt-0.5">{formatPrice(item.product.price * item.qty)}</div>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-gray-700 p-1 rounded-xl flex-shrink-0">
+                          <button onClick={() => updateQty(item.product.id,-1)} className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-600 font-black text-sm hover:bg-gray-200">-</button>
+                          <span className="font-bold text-sm w-5 text-center">{item.qty}</span>
+                          <button onClick={() => updateQty(item.product.id,1)} className="w-7 h-7 rounded-lg bg-rose-600 text-white font-black text-sm hover:bg-rose-700">+</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {cart.length > 0 && (
+                  <div className="p-5 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                    {wallet > 0 && (
+                      <label className="flex items-center justify-between p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 cursor-pointer">
+                        <span className="text-xs font-semibold">🎁 Hamyondan to'lash <span className="text-amber-600 font-black">({formatPrice(wallet)})</span></span>
+                        <input type="checkbox" checked={useCashback} onChange={e => setUseCashback(e.target.checked)} className="w-4 h-4 accent-rose-600" />
+                      </label>
+                    )}
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex justify-between text-gray-500">
+                        <span>Mahsulotlar:</span><span>{formatPrice(cartSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-500">
+                        <span>Yetkazib berish:</span>
+                        <span className={deliveryFee===0?'text-emerald-500 font-semibold':''}>{deliveryFee===0?'Bepul 🎉':formatPrice(deliveryFee)}</span>
+                      </div>
+                      {usedWallet > 0 && <div className="flex justify-between text-amber-600 font-semibold"><span>Hamyon chegirmasi:</span><span>-{formatPrice(usedWallet)}</span></div>}
+                      <div className="flex justify-between font-black text-lg pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <span>Jami:</span><span className="text-rose-600">{formatPrice(finalTotal)}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white font-black text-sm shadow-lg transition-all">
+                      Buyurtma berish →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* CHECKOUT */}
+          {isCheckoutOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <form onSubmit={handleCheckout} className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700 space-y-4 fade-up max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-black text-xl">📋 Buyurtmani rasmiylashtirish</h3>
+                  <button type="button" onClick={() => setIsCheckoutOpen(false)} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-gray-500">✕</button>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { label:'To\'liq ismingiz *', placeholder:'Anvar Karimov', defaultVal:'Anvar Karimov' },
+                    { label:'Telefon raqam *', placeholder:'+998 90 123 45 67', defaultVal:'+998 90 123 45 67' },
+                    { label:'Yetkazib berish manzili *', placeholder:'Toshkent, Chilonzor...', defaultVal:'Toshkent sh., Chilonzor tumani, 9-mavze' },
+                  ].map(field => (
+                    <div key={field.label}>
+                      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">{field.label}</label>
+                      <input required defaultValue={field.defaultVal} placeholder={field.placeholder} className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">To'lov usuli</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{ val:'cash', label:'💵 Naqd' }, { val:'card', label:'💳 Karta' }, { val:'click', label:'📱 Click' }].map(opt => (
+                        <label key={opt.val} className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-rose-500 cursor-pointer text-xs font-semibold transition-colors">
+                          <input type="radio" name="payment" value={opt.val} defaultChecked={opt.val==='card'} className="accent-rose-600" />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 space-y-1.5 text-sm">
+                  <div className="flex justify-between text-gray-500"><span>Mahsulotlar ({totalCount} ta):</span><span>{formatPrice(cartSubtotal)}</span></div>
+                  {deliveryFee===0 ? <div className="flex justify-between text-emerald-500 font-semibold"><span>Yetkazib berish:</span><span>Bepul 🎉</span></div> : <div className="flex justify-between text-gray-500"><span>Yetkazib berish:</span><span>{formatPrice(deliveryFee)}</span></div>}
+                  <div className="flex justify-between font-black text-lg border-t border-gray-200 dark:border-gray-700 pt-2"><span>Jami to'lov:</span><span className="text-rose-600">{formatPrice(finalTotal)}</span></div>
+                </div>
+                <button type="submit" className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-red-500 text-white font-black text-sm shadow-xl hover:scale-[1.02] transition-all">
+                  ✅ Buyurtmani tasdiqlash — {formatPrice(finalTotal)}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ORDER SUCCESS */}
+          {orderDone && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl p-8 text-center shadow-2xl border border-gray-200 dark:border-gray-700 space-y-5 fade-up">
+                <div className="text-7xl animate-bounce">🎉</div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">Buyurtma qabul!</h3>
+                  <p className="text-gray-400 text-sm mt-1">Raqam: <strong className="text-rose-500">#{orderDone.id}</strong></p>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-2xl p-3">
+                  <div className="text-amber-600 font-black">+{formatPrice(orderDone.earned)}</div>
+                  <div className="text-xs text-amber-500">Hamyoningizga keshbek qo'shildi!</div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setIsMapOpen(true)} className="p-3 bg-blue-50 dark:bg-blue-950 text-blue-600 rounded-2xl font-bold text-xs border border-blue-200 dark:border-blue-800">🗺️ Kuryer xaritasi</button>
+                  <button onClick={() => setIsReceiptOpen(true)} className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-bold text-xs border">🧾 Elektron chek</button>
+                </div>
+                <button onClick={() => setOrderDone(null)} className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold text-sm">Davom etish →</button>
+              </div>
+            </div>
+          )}
+
+          {/* LIVE MAP */}
+          {isMapOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border fade-up">
+                <div className="p-4 bg-gradient-to-r from-rose-600 to-red-500 text-white flex justify-between items-center">
+                  <h3 className="font-bold text-sm">🛵 Jonli Kuryer Xaritasi (GPS)</h3>
+                  <button onClick={() => setIsMapOpen(false)} className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold">✕</button>
+                </div>
+                <div className="h-52 bg-gray-900 relative flex items-center justify-center">
+                  <div className="absolute grid grid-cols-10 inset-0 opacity-20">
+                    {Array(100).fill(0).map((_,i) => <div key={i} className="border border-gray-600"></div>)}
+                  </div>
+                  <div className="absolute left-8 bottom-6 text-center z-10">
+                    <span className="text-3xl block">🏬</span>
+                    <span className="text-[9px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">Ombor</span>
+                  </div>
+                  <div className="absolute right-8 top-6 text-center z-10">
+                    <span className="text-3xl block">🏠</span>
+                    <span className="text-[9px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">Siz</span>
+                  </div>
+                  <div className="relative text-center animate-bounce z-10">
+                    <span className="text-4xl block">🛵</span>
+                    <span className="text-[10px] bg-orange-400 text-gray-900 font-black px-3 py-0.5 rounded-full">42 km/h</span>
+                  </div>
+                </div>
+                <div className="p-5 grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
+                    <div className="text-xs text-gray-400">Taxminiy vaqt</div>
+                    <div className="font-black text-emerald-500 text-lg">18 daqiqa</div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-3">
+                    <div className="text-xs text-gray-400">Kuryer</div>
+                    <div className="font-bold text-sm">Sanjarbek A.</div>
+                    <a href="tel:+998977654321" className="text-xs text-blue-500 font-semibold">+998 97 765 43 21</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* RECEIPT */}
+          {isReceiptOpen && orderDone && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+              <div className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-2xl border fade-up">
+                <div className="flex justify-between items-center border-b pb-3 mb-3">
+                  <div>
+                    <div className="font-black text-sm">🛒 UzumShop Cheki</div>
+                    <div className="text-[10px] text-gray-400">#{orderDone.id} · {orderDone.date}</div>
+                  </div>
+                  <button onClick={() => setIsReceiptOpen(false)} className="w-7 h-7 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-gray-500 flex items-center justify-center">✕</button>
+                </div>
+                <div className="space-y-1.5 text-xs border-b border-dashed pb-3 mb-3 max-h-40 overflow-y-auto">
+                  {orderDone.items.map((it,i) => (
+                    <div key={i} className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400 truncate mr-2">{it.product.name} ×{it.qty}</span>
+                      <span className="font-semibold flex-shrink-0">{formatPrice(it.product.price*it.qty)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1 text-xs mb-4">
+                  <div className="flex justify-between text-gray-400"><span>Yetkazish:</span><span>{formatPrice(orderDone.deliveryFee)}</span></div>
+                  <div className="flex justify-between font-black text-base"><span>JAMI:</span><span className="text-rose-600">{formatPrice(orderDone.total)}</span></div>
+                </div>
+                <button onClick={() => window.print()} className="w-full py-2.5 rounded-2xl bg-gray-900 dark:bg-gray-700 text-white text-xs font-bold">🖨️ Chop etish</button>
+              </div>
+            </div>
+          )}
+
+          {/* AI MASLAHATCHI */}
+          {isAiOpen && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+              <div className="w-full sm:max-w-2xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[95vh] sm:max-h-[88vh] fade-up">
+
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-xl shadow-lg">🤖</div>
+                    <div>
+                      <h3 className="font-black text-sm text-gray-900 dark:text-white">UzumShop AI Bot</h3>
+                      <div className="flex items-center gap-1.5 text-[10px]">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block"></span>
+                        <span className="text-green-500 font-semibold">Online — Aqlli xarid yordamchisi</span>
+                        {aiBudget && <span className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full font-bold">💰 Budget: {formatPrice(aiBudget)}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {aiBudget && (
+                      <button onClick={() => { setAiBudget(null); setAiWaitingBudget(false); }} className="text-[10px] px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 font-semibold hover:bg-gray-200">Budget tozalash</button>
+                    )}
+                    <button onClick={() => setIsAiOpen(false)} className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center">✕</button>
+                  </div>
+                </div>
+
+                {/* Quick prompts */}
+                <div className="flex gap-2 px-4 pt-3 pb-2 overflow-x-auto scrollbar-none flex-shrink-0">
+                  {[
+                    { icon:'📱', text:'Telefon' },
+                    { icon:'💻', text:'Noutbuk' },
+                    { icon:'🎧', text:'Quloqchin' },
+                    { icon:'⌚', text:'Soat' },
+                    { icon:'🎮', text:'Gaming' },
+                    { icon:'👕', text:'Kiyim' },
+                    { icon:'🔥', text:'Aksiya' },
+                    { icon:'💚', text:'500 ming gacha telefon' },
+                    { icon:'💙', text:'2 million gacha noutbuk' },
+                    { icon:'💰', text:'Arzon' },
+                  ].map(q => (
+                    <button key={q.text} onClick={() => handleAiSend(q.text)} className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 text-xs font-bold border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors whitespace-nowrap">
+                      <span>{q.icon}</span> {q.text}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Chat */}
+                <div ref={aiChatRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                  {aiMessages.map((msg, i) => (
+                    <div key={i} className={`flex gap-2.5 ${msg.sender==='user'?'justify-end':'justify-start'}`}>
+                      {msg.sender==='ai' && (
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-base flex-shrink-0 mt-0.5 shadow">🤖</div>
+                      )}
+                      <div className={`flex-1 max-w-[90%] ${msg.sender==='user'?'flex justify-end':''}`}>
+                        {/* Text bubble */}
+                        <div className={`rounded-2xl px-4 py-2.5 text-xs leading-relaxed mb-2 ${
+                          msg.sender==='user'
+                            ? 'bg-gradient-to-r from-rose-600 to-red-500 text-white rounded-br-sm inline-block max-w-xs'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm'
+                        }`}>
+                          <p style={{whiteSpace:'pre-line'}}>{msg.text}</p>
+                          {msg.budgetNote && (
+                            <span className="inline-block mt-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">{msg.budgetNote}</span>
+                          )}
+                        </div>
+
+                        {/* Product Cards inside chat */}
+                        {msg.products && msg.products.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-[10px] text-gray-400 font-semibold px-1">{msg.products.length} ta mahsulot — ustiga bosib buyurtma bering:</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {msg.products.map(p => {
+                                const disc = p.oldPrice ? Math.round((1-p.price/p.oldPrice)*100) : 0;
+                                return (
+                                  <div key={p.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-all">
+                                    <div className="flex gap-3 p-2.5">
+                                      {/* Image */}
+                                      <div className="relative flex-shrink-0">
+                                        <img src={p.img} alt={p.name} className="w-16 h-16 rounded-xl object-cover" />
+                                        {disc > 0 && <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full">-{disc}%</span>}
+                                      </div>
+                                      {/* Info */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-[9px] text-gray-400 font-semibold uppercase">{p.brand}</div>
+                                        <div className="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-snug">{p.name}</div>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                          <span className="text-amber-400 text-[10px]">★</span>
+                                          <span className="text-[10px] text-gray-400">{p.rating} ({p.reviews.toLocaleString()})</span>
+                                        </div>
+                                        <div className="mt-1">
+                                          <span className="font-black text-sm text-rose-600 dark:text-rose-400">{formatPrice(p.price)}</span>
+                                          {p.oldPrice && <span className="text-[10px] text-gray-400 line-through ml-1">{formatPrice(p.oldPrice)}</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Buttons */}
+                                    <div className="flex gap-1.5 px-2.5 pb-2.5">
+                                      <button
+                                        onClick={() => { addToCart(p); showToast(`"${p.name}" savatga qo'shildi! 🛒`); }}
+                                        className="flex-1 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-[11px] font-bold transition-colors"
+                                      >🛒 Savatga</button>
+                                      <button
+                                        onClick={() => {
+                                          addToCart(p);
+                                          setIsAiOpen(false);
+                                          setTimeout(() => setIsCheckoutOpen(true), 100);
+                                        }}
+                                        className="flex-1 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-700 hover:to-red-600 text-white text-[11px] font-bold transition-all shadow-sm"
+                                      >⚡ Buyurtma</button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {/* Budget filter chips */}
+                            {msg.askBudget && !aiBudget && (
+                              <div className="mt-2 p-3 bg-violet-50 dark:bg-violet-950/40 rounded-2xl border border-violet-200 dark:border-violet-800">
+                                <div className="text-[11px] text-violet-700 dark:text-violet-300 font-bold mb-2">💰 Budget bo'yicha filtrlash:</div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {[
+                                    { label:'💚 500 ming gacha', max:500000 },
+                                    { label:'💙 1.5 mln gacha', max:1500000 },
+                                    { label:'💛 5 mln gacha', max:5000000 },
+                                    { label:'🔴 Hammasi', max:Infinity },
+                                  ].map(b => (
+                                    <button
+                                      key={b.label}
+                                      onClick={() => {
+                                        if (b.max === Infinity) { setAiBudget(null); return; }
+                                        setAiBudget(b.max);
+                                        const filtered3 = (msg.products||[]).filter(p=>p.price<=b.max);
+                                        const reply3 = {
+                                          sender:'ai',
+                                          text: filtered3.length>0
+                                            ? `✅ ${formatPrice(b.max)} budgetda ${filtered3.length} ta mahsulot:`
+                                            : `😕 ${formatPrice(b.max)} budgetda topilmadi. Budgetni ko'paytiring.`,
+                                          products: filtered3,
+                                          budgetNote: `Budget: ${formatPrice(b.max)}`
+                                        };
+                                        setAiMessages(prev => [...prev, reply3]);
+                                        setTimeout(() => { if(aiChatRef.current) aiChatRef.current.scrollTop = aiChatRef.current.scrollHeight; }, 50);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300 text-[11px] font-bold hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors"
+                                    >{b.label}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Budget kutilmoqda */}
+                        {msg.sender==='ai' && aiWaitingBudget && i === aiMessages.length-1 && (
+                          <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800">
+                            <div className="text-[11px] text-amber-700 dark:text-amber-300 font-bold mb-2">💰 Tez tanlang yoki o'zingiz yozing:</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                { label:'500 000 so\'m', val:'500000' },
+                                { label:'1 million', val:'1 million' },
+                                { label:'2 million', val:'2 million' },
+                                { label:'5 million', val:'5 million' },
+                                { label:'10 million', val:'10 million' },
+                              ].map(b => (
+                                <button key={b.val} onClick={() => handleAiSend(b.val)} className="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[11px] font-bold hover:bg-amber-100 transition-colors">{b.label}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {msg.sender==='user' && (
+                        <div className="w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-base flex-shrink-0 mt-0.5">👤</div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Typing indicator */}
+                  {aiTyping && (
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-base shadow">🤖</div>
+                      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-sm px-5 py-3.5 flex items-center gap-2">
+                        {[0,160,320].map(d => (
+                          <span key={d} className="w-2.5 h-2.5 rounded-full bg-violet-500 animate-bounce" style={{animationDelay:d+'ms'}}></span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Input */}
+                <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+                  <div className="flex gap-2">
+                    <input
+                      ref={aiInputRef}
+                      type="text"
+                      value={aiQuery}
+                      onChange={e => setAiQuery(e.target.value)}
+                      onKeyDown={e => e.key==='Enter' && handleAiSend()}
+                      placeholder={aiWaitingBudget ? "Budgetni yozing: 2 million, 500 ming..." : "Mahsulot nomi yoki so'rovingizni yozing..."}
+                      className={`flex-1 px-4 py-3 rounded-2xl text-sm focus:outline-none focus:ring-2 border ${
+                        aiWaitingBudget
+                          ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 placeholder-amber-500 focus:ring-amber-400'
+                          : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:ring-violet-500'
+                      }`}
+                    />
+                    <button
+                      onClick={() => handleAiSend()}
+                      disabled={!aiQuery.trim() || aiTyping}
+                      className="px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:scale-105 active:scale-95"
+                    >➤</button>
+                  </div>
+                  {aiWaitingBudget && (
+                    <p className="text-[10px] text-amber-500 font-semibold mt-1.5 px-1">💡 Budgetingizni yozing yoki yuqoridagi tugmalardan tanlang</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TOAST */}
+          {toast && (
+            <div className={`fixed bottom-24 right-5 sm:bottom-6 px-5 py-3 rounded-2xl text-xs font-semibold shadow-2xl border animate-bounce z-50 ${toastType==='success'?'bg-gray-900 text-white border-gray-700':'bg-rose-600 text-white border-rose-500'}`}>
+              {toast}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
